@@ -51,6 +51,21 @@ export default function RetroMac128KPortfolio(){
   const [wins,setWins] = useState<RetroWindow[]>(initialWins);
   useEffect(()=> saveWinPositions(wins),[wins]);
 
+  // Base URL for assets (important for GitHub Pages project sites)
+  const computeBase = (): string => {
+    // Prefer <base href> if present
+    const baseEl = document.querySelector('base');
+    if (baseEl) {
+      const href = (baseEl as HTMLBaseElement).getAttribute('href') || '/';
+      return href.endsWith('/') ? href : href + '/';
+    }
+    // Fallback: first path segment (e.g., /repo/ on Pages project sites)
+    const path = window.location.pathname || '/';
+    const m = path.match(/^(\/[\w.-]+\/)/);
+    return m ? m[1] : '/';
+  };
+  const base = computeBase();
+
   // Theme state (classic grayscale vs green phosphor vs amber)
   type Theme = 'classic' | 'phosphor' | 'amber';
   const [theme,setTheme] = useState<Theme>(()=> {
@@ -59,16 +74,16 @@ export default function RetroMac128KPortfolio(){
   });
   useEffect(()=> { localStorage.setItem('retro-theme', theme); },[theme]);
 
-  const bringToFront = (key:WinKey)=> setWins(p=>{ const next=maxZ+1; setMaxZ(next); return p.map(w=> w.key===key? { ...w, z:next, open:true, minimized:false }:w); });
-  const setOpen = (key:WinKey, open:boolean) => setWins(p=> p.map(w=> w.key===key? { ...w, open }: w));
+  const bringToFront = (key:WinKey)=> setWins((p:RetroWindow[])=>{ const next=maxZ+1; setMaxZ(next); return p.map((w:RetroWindow)=> w.key===key? { ...w, z:next, open:true, minimized:false }:w); });
+  const setOpen = (key:WinKey, open:boolean) => setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> w.key===key? { ...w, open }: w));
 
   // Window actions
-  const closeAll = () => setWins(p=> p.map(w=> ({...w, open:false})));
-  const openAll  = () => setWins(p=> p.map(w=> ({...w, open:true })));
-  const resetLayout = () => setWins(p=> p.map(w=> ({...w, ...defaultWinDefs[w.key]})));
-  const bringAllToFront = () => setWins(p=> { let next = maxZ; const updated = p.map(w=> { next+=1; return { ...w, z:next }; }); setMaxZ(next); return updated; });
-  const cascade = () => setWins(p=> p.map((w,i)=> ({...w, x: 90 + i*48, y: MENU_BAR_HEIGHT + 32 + i*48 })));
-  const tileHorizontal = () => setWins(p=> { const openWins = p.filter(w=>w.open); if(openWins.length===0) return p; const bounds = screenRef.current?.getBoundingClientRect(); const totalH = (bounds?.height||800) - (MENU_BAR_HEIGHT+40); const eachH = Math.max(140, Math.floor(totalH / openWins.length)-12); return p.map(w=>{ if(!w.open) return w; const idx=openWins.findIndex(o=>o.key===w.key); if(idx===-1) return w; return { ...w, x: 100, y: MENU_BAR_HEIGHT + 28 + idx*(eachH+8), w: Math.min(w.w, (bounds?.width||1200)-160), h: eachH }; }); });
+  const closeAll = () => setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> ({...w, open:false})));
+  const openAll  = () => setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> ({...w, open:true })));
+  const resetLayout = () => setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> ({...w, ...defaultWinDefs[w.key]})));
+  const bringAllToFront = () => setWins((p:RetroWindow[])=> { let next = maxZ; const updated = p.map((w:RetroWindow)=> { next+=1; return { ...w, z:next }; }); setMaxZ(next); return updated; });
+  const cascade = () => setWins((p:RetroWindow[])=> p.map((w:RetroWindow,i:number)=> ({...w, x: 90 + i*48, y: MENU_BAR_HEIGHT + 32 + i*48 })));
+  const tileHorizontal = () => setWins((p:RetroWindow[])=> { const openWins = p.filter((w:RetroWindow)=>w.open); if(openWins.length===0) return p; const bounds = screenRef.current?.getBoundingClientRect(); const totalH = (bounds?.height||800) - (MENU_BAR_HEIGHT+40); const eachH = Math.max(140, Math.floor(totalH / openWins.length)-12); return p.map((w:RetroWindow)=>{ if(!w.open) return w; const idx=openWins.findIndex((o:RetroWindow)=>o.key===w.key); if(idx===-1) return w; return { ...w, x: 100, y: MENU_BAR_HEIGHT + 28 + idx*(eachH+8), w: Math.min(w.w, (bounds?.width||1200)-160), h: eachH }; }); });
   const minimizeAll = () => closeAll();
 
   // Normalize after mount
@@ -76,7 +91,7 @@ export default function RetroMac128KPortfolio(){
     const bounds = screenRef.current?.getBoundingClientRect();
     if(!bounds) return;
     const bw = bounds.width - 6; const bh = bounds.height - 6;
-    setWins(p=> p.map(w=> {
+  setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> {
       const effectiveH = w.h ?? 360;
       return {
         ...w,
@@ -92,7 +107,7 @@ export default function RetroMac128KPortfolio(){
     const start=useRef<{x:number;y:number}|null>(null);
     const last=useRef<{x:number;y:number}|null>(null);
     const onPointerDown=(e:React.PointerEvent)=>{ (e.target as HTMLElement).setPointerCapture(e.pointerId); start.current={x:e.clientX,y:e.clientY}; last.current=start.current; bringToFront(key); };
-  const onPointerMove=(e:React.PointerEvent)=>{ if(!start.current) return; const dx=e.clientX-(last.current?.x||e.clientX); const dy=e.clientY-(last.current?.y||e.clientY); last.current={x:e.clientX,y:e.clientY}; const bounds=screenRef.current?.getBoundingClientRect(); const bw=(bounds?.width||1200)-6; const bh=(bounds?.height||800)-6; setWins(p=> p.map(w=>{ if(w.key!==key) return w; const effectiveH = w.h ?? 360; return { ...w, x:clamp(w.x+dx,0,Math.max(0,bw-w.w)), y:clamp(w.y+dy,MENU_BAR_HEIGHT,Math.max(MENU_BAR_HEIGHT,bh-effectiveH)) }; })); };
+    const onPointerMove=(e:React.PointerEvent)=>{ if(!start.current) return; const dx=e.clientX-(last.current?.x||e.clientX); const dy=e.clientY-(last.current?.y||e.clientY); last.current={x:e.clientX,y:e.clientY}; const bounds=screenRef.current?.getBoundingClientRect(); const bw=(bounds?.width||1200)-6; const bh=(bounds?.height||800)-6; setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=>{ if(w.key!==key) return w; const effectiveH = w.h ?? 360; return { ...w, x:clamp(w.x+dx,0,Math.max(0,bw-w.w)), y:clamp(w.y+dy,MENU_BAR_HEIGHT,Math.max(MENU_BAR_HEIGHT,bh-effectiveH)) }; })); };
     const onPointerUp=(e:React.PointerEvent)=>{ (e.target as HTMLElement).releasePointerCapture(e.pointerId); start.current=null; last.current=null; };
     return { onPointerDown,onPointerMove,onPointerUp };
   };
@@ -100,18 +115,18 @@ export default function RetroMac128KPortfolio(){
   // Resize hook
   const useResizeWin = (key:WinKey) => {
     const start=useRef<{x:number;y:number;w:number;h:number}|null>(null);
-  const onPointerDown=(e:React.PointerEvent)=>{ (e.target as HTMLElement).setPointerCapture(e.pointerId); const w=wins.find(v=>v.key===key)!; start.current={x:e.clientX,y:e.clientY,w:w.w,h:w.h ?? 360}; bringToFront(key); };
-  const onPointerMove=(e:React.PointerEvent)=>{ if(!start.current) return; const dx=e.clientX-start.current.x; const dy=e.clientY-start.current.y; const bounds=screenRef.current?.getBoundingClientRect(); const bw=(bounds?.width||1200)-6; const bh=(bounds?.height||800)-6; setWins(p=> p.map(w=>{ if(w.key!==key) return w; let newW=clamp(start.current!.w+dx,260,1500); let newH=clamp(start.current!.h+dy,160,900); newW=Math.min(newW, bw - w.x); newH=Math.min(newH, bh - w.y); return { ...w, w:newW, h:newH }; })); };
+  const onPointerDown=(e:React.PointerEvent)=>{ (e.target as HTMLElement).setPointerCapture(e.pointerId); const w=wins.find((v:RetroWindow)=>v.key===key)!; start.current={x:e.clientX,y:e.clientY,w:w.w,h:w.h ?? 360}; bringToFront(key); };
+  const onPointerMove=(e:React.PointerEvent)=>{ if(!start.current) return; const dx=e.clientX-start.current.x; const dy=e.clientY-start.current.y; const bounds=screenRef.current?.getBoundingClientRect(); const bw=(bounds?.width||1200)-6; const bh=(bounds?.height||800)-6; setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=>{ if(w.key!==key) return w; let newW=clamp(start.current!.w+dx,260,1500); let newH=clamp(start.current!.h+dy,160,900); newW=Math.min(newW, bw - w.x); newH=Math.min(newH, bh - w.y); return { ...w, w:newW, h:newH }; })); };
     const onPointerUp=(e:React.PointerEvent)=>{ (e.target as HTMLElement).releasePointerCapture(e.pointerId); start.current=null; };
     return { onPointerDown,onPointerMove,onPointerUp };
   };
 
   // Desktop icons
   const defaultIcons:DesktopIconType[]=[
-    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src:'/icons/projects.png'} },
-    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src:'/icons/folder-heart.png'} },
-    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src:'/icons/about.png'} },
-    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src:'/icons/projects.png'} }
+    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src:`${base}icons/projects.png`} },
+    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src:`${base}icons/folder-heart.png`} },
+    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src:`${base}icons/about.png`} },
+    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src:`${base}icons/projects.png`} }
   ];
   const [icons,setIcons] = useState<DesktopIconType[]>(()=> loadIcons() ?? defaultIcons);
   useEffect(()=> saveIcons(icons),[icons]);
@@ -125,21 +140,21 @@ export default function RetroMac128KPortfolio(){
   const [trail,setTrail] = useState<TrailDot[]>([]);
   const TRAIL_LIFE = 450; // ms
   const [trailTick,setTrailTick] = useState(0);
-  useEffect(()=>{ if(!trail.length) return; const id = requestAnimationFrame(()=> setTrailTick(t=>t+1)); return ()=> cancelAnimationFrame(id); },[trail,trailTick]);
+  useEffect(()=>{ if(!trail.length) return; const id = requestAnimationFrame(()=> setTrailTick((t:number)=>t+1)); return ()=> cancelAnimationFrame(id); },[trail,trailTick]);
   const iconSize={w:92,h:104};
-  const iconDown=(e:React.PointerEvent,id:string)=>{ e.preventDefault(); e.stopPropagation(); (e.target as HTMLElement).setPointerCapture(e.pointerId); setDragIconId(id); if(!selectedIcons.includes(id)) { if(e.shiftKey || e.metaKey || e.ctrlKey) setSelectedIcons(prev=> [...prev,id]); else setSelectedIcons([id]); } else { if(e.shiftKey || e.metaKey || e.ctrlKey){ /* toggle */ setSelectedIcons(prev=> prev.filter(i=>i!==id)); } } };
-  const iconMove=(e:React.PointerEvent)=>{ if(!dragIconId) return; const d=screenRef.current?.getBoundingClientRect(); const movedIds = selectedIcons.includes(dragIconId)? selectedIcons : [dragIconId]; setIcons(p=> p.map(ic=> movedIds.includes(ic.id)?{ ...ic, x:clamp(ic.x+(e.movementX||0),8,(d?.width||1000)-iconSize.w-8), y:clamp(ic.y+(e.movementY||0),MENU_BAR_HEIGHT+4,(d?.height||700)-iconSize.h-8) }:ic));
+  const iconDown=(e:React.PointerEvent,id:string)=>{ e.preventDefault(); e.stopPropagation(); (e.target as HTMLElement).setPointerCapture(e.pointerId); setDragIconId(id); if(!selectedIcons.includes(id)) { if(e.shiftKey || e.metaKey || e.ctrlKey) setSelectedIcons((prev:string[])=> [...prev,id]); else setSelectedIcons([id]); } else { if(e.shiftKey || e.metaKey || e.ctrlKey){ /* toggle */ setSelectedIcons((prev:string[])=> prev.filter((i:string)=>i!==id)); } } };
+  const iconMove=(e:React.PointerEvent)=>{ if(!dragIconId) return; const d=screenRef.current?.getBoundingClientRect(); const movedIds: string[] = selectedIcons.includes(dragIconId)? selectedIcons : [dragIconId]; setIcons((p:DesktopIconType[])=> p.map((ic:DesktopIconType)=> movedIds.includes(ic.id)?{ ...ic, x:clamp(ic.x+(e.movementX||0),8,(d?.width||1000)-iconSize.w-8), y:clamp(ic.y+(e.movementY||0),MENU_BAR_HEIGHT+4,(d?.height||700)-iconSize.h-8) }:ic));
     // trail dots for moved icons
     const now = Date.now();
-    setTrail(t=>{
-      const fresh = t.filter(td=> now-td.created < TRAIL_LIFE);
-      const additions:TrailDot[] = movedIds.map(id=>{ const ic = icons.find(i=>i.id===id); return { id, x: ic? ic.x:0, y: ic? ic.y:0, created: now, src: ic?.img?.src }; });
+    setTrail((t:TrailDot[])=>{
+      const fresh = t.filter((td:TrailDot)=> now-td.created < TRAIL_LIFE);
+      const additions:TrailDot[] = movedIds.map((id:string)=>{ const ic = icons.find((i:DesktopIconType)=>i.id===id); return { id, x: ic? ic.x:0, y: ic? ic.y:0, created: now, src: ic?.img?.src }; });
       return [...fresh, ...additions];
     }); };
   const iconUp=(e:React.PointerEvent)=>{ if(!dragIconId && !marquee) return; if(dragIconId){ (e.target as HTMLElement).releasePointerCapture(e.pointerId); setDragIconId(null); }
-    setTimeout(()=> setTrail(t=> t.filter(td=> Date.now()-td.created < TRAIL_LIFE)), TRAIL_LIFE+60);
+    setTimeout(()=> setTrail((t:TrailDot[])=> t.filter((td:TrailDot)=> Date.now()-td.created < TRAIL_LIFE)), TRAIL_LIFE+60);
   };
-  const iconDbl=(id:string)=>{ const ic=icons.find(i=>i.id===id); if(ic?.openKey) bringToFront(ic.openKey); };
+  const iconDbl=(id:string)=>{ const ic=icons.find((i:DesktopIconType)=>i.id===id); if(ic?.openKey) bringToFront(ic.openKey); };
 
   // Background mouse down for marquee
   const onBackgroundPointerDown = (e:React.PointerEvent) => {
@@ -157,21 +172,21 @@ export default function RetroMac128KPortfolio(){
     if(!marquee) return;
     const areaRect = iconAreaRef.current?.getBoundingClientRect(); if(!areaRect) return;
     const x = e.clientX - areaRect.left; const y = e.clientY - areaRect.top;
-    setMarquee(m=> m? {...m,x2:x,y2:y}:m);
+    setMarquee((m: {x1:number;y1:number;x2:number;y2:number} | null)=> m? {...m,x2:x,y2:y}:m);
   };
   const onBackgroundPointerUp = () => {
     if(!marquee) return;
     const {x1,y1,x2,y2} = marquee; const minX=Math.min(x1,x2); const maxX=Math.max(x1,x2); const minY=Math.min(y1,y2); const maxY=Math.max(y1,y2);
-    const newly = icons.filter(ic=> ic.x + iconSize.w > minX && ic.x < maxX && ic.y + iconSize.h > minY && ic.y < maxY).map(i=>i.id);
-    setSelectedIcons(prev=> Array.from(new Set([...(prev), ...newly])));
+    const newly = icons.filter((ic:DesktopIconType)=> ic.x + iconSize.w > minX && ic.x < maxX && ic.y + iconSize.h > minY && ic.y < maxY).map((i:DesktopIconType)=>i.id);
+    setSelectedIcons((prev:string[])=> Array.from(new Set([...(prev), ...newly])));
     setMarquee(null);
   };
 
   // Projects data
   const projects:Project[]=[
-    { id:'ucm',      title:'Máster UCM', short:'Liderando el Futuro Sostenible', image:'/projects/ucm.png',      tech:['WordPress','JavaScript','PHP'] },
-    { id:'coduck',   title:'Coduck',     short:'Plataforma de formación',       image:'/projects/coduck.png',   tech:['React','Node','PostgreSQL'] },
-    { id:'madmusic', title:'MadMusic',   short:'Tienda de instrumentos',        image:'/projects/madmusic.png', tech:['Next.js','Stripe'] }
+    { id:'ucm',      title:'Máster UCM', short:'Liderando el Futuro Sostenible', image:`${base}icons/projects.png`,      tech:['WordPress','JavaScript','PHP'] },
+    { id:'coduck',   title:'Coduck',     short:'Plataforma de formación',       image:`${base}icons/projects.png`,   tech:['React','Node','PostgreSQL'] },
+    { id:'madmusic', title:'MadMusic',   short:'Tienda de instrumentos',        image:`${base}icons/projects.png`, tech:['Next.js','Stripe'] }
   ];
   const [selectedProject,setSelectedProject] = useState<Project|null>(projects[0]);
 
@@ -195,7 +210,7 @@ export default function RetroMac128KPortfolio(){
     File:[ {label:'Open About', action:()=>bringToFront('about')}, {label:'Open Projects', action:()=>bringToFront('projects')}, {label:'Open Social', action:()=>bringToFront('social')}, {label:'Open Terminal', action:()=>bringToFront('terminal')}, {label:'---'}, {label:'Reset Layout', action: resetLayout} ],
     Window:[ {label:'Bring All to Front', action: bringAllToFront}, {label:'Cascade', action: cascade}, {label:'Tile Horizontal', action: tileHorizontal}, {label:'Minimize All', action: minimizeAll} ],
     View:[
-      {label:'Select All Icons', action:()=> setSelectedIcons(icons.map(i=>i.id))},
+  {label:'Select All Icons', action:()=> setSelectedIcons(icons.map((i:DesktopIconType)=>i.id))},
       {label:'Clear Selection', action:()=> setSelectedIcons([])},
       {label:'---'},
   {label:'Settings…', action:()=> bringToFront('settings')},
@@ -243,7 +258,7 @@ export default function RetroMac128KPortfolio(){
     <path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='black'/>
   </svg>`);
 
-  const WindowBody:React.FC<{win:RetroWindow}> = ({ win }) => {
+  const WindowBody:React.FC<{win:RetroWindow}> = ({ win }: { win: RetroWindow }) => {
     switch(win.key){
       case 'about': return <AboutBody brand={BRAND}/>;
       case 'social': return <SocialBody LINKS={{ github:'https://github.com/JesusFerDev' }}/>;
@@ -259,7 +274,7 @@ export default function RetroMac128KPortfolio(){
       case 'settings': return (
         <SettingsBody
           theme={theme}
-          onThemeChange={(t)=> setTheme(t)}
+          onThemeChange={(t:Theme)=> setTheme(t)}
           screensaverMs={screensaverMs}
           onScreensaverMsChange={setScreensaverMs}
         />
@@ -280,7 +295,7 @@ export default function RetroMac128KPortfolio(){
   useEffect(()=> { if(showCurvDebug) localStorage.setItem('crt-curv-debug','1'); else localStorage.removeItem('crt-curv-debug'); },[showCurvDebug]);
   // Toggle con Alt + C
   useEffect(()=> {
-    const handler = (e:KeyboardEvent)=>{ if(e.altKey && (e.key==='c' || e.key==='C')) { setShowCurvDebug(p=>!p); } };
+  const handler = (e:KeyboardEvent)=>{ if(e.altKey && (e.key==='c' || e.key==='C')) { setShowCurvDebug((p:boolean)=>!p); } };
     window.addEventListener('keydown', handler);
     return ()=> window.removeEventListener('keydown', handler);
   },[]);
@@ -328,7 +343,7 @@ export default function RetroMac128KPortfolio(){
   useEffect(()=> { if(showMonitorDebug) localStorage.setItem('monitor-debug','1'); else localStorage.removeItem('monitor-debug'); },[showMonitorDebug]);
   // Toggle debug Alt+M
   useEffect(()=> {
-    const handler = (e:KeyboardEvent)=> { if(e.altKey && (e.key==='m' || e.key==='M')) setShowMonitorDebug(p=>!p); };
+  const handler = (e:KeyboardEvent)=> { if(e.altKey && (e.key==='m' || e.key==='M')) setShowMonitorDebug((p:boolean)=>!p); };
     window.addEventListener('keydown', handler);
     return ()=> window.removeEventListener('keydown', handler);
   },[]);
@@ -586,7 +601,7 @@ export default function RetroMac128KPortfolio(){
       setLocked(false); setPassInput(''); lastActiveRef.current = Date.now();
       setAttempts(0); setErrorMsg(null);
     } else {
-      setAttempts(a=>a+1);
+  setAttempts((a:number)=>a+1);
       setErrorMsg('Contraseña incorrecta');
     }
   };
@@ -667,15 +682,15 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
               width: (screenWidthPct*100)+'%',
               height: (screenHeightPct*100)+'%'
             }}
-            onPointerMove={(e)=>{iconMove(e); onBackgroundPointerMove(e);}}
-            onPointerUp={(e)=>{iconUp(e); onBackgroundPointerUp();}}
+            onPointerMove={(e:React.PointerEvent)=>{iconMove(e); onBackgroundPointerMove(e);}}
+            onPointerUp={(e:React.PointerEvent)=>{iconUp(e); onBackgroundPointerUp();}}
             onPointerDown={onBackgroundPointerDown}
           >
               {booting && (
                 <div className={`boot-overlay absolute inset-0 z-[5000] flex flex-col px-4 py-3 font-mono overflow-hidden ${bootDone?'fade-out':''}`} style={{background:'#000'}}>
                   <div className="relative flex-1 boot-scanline">
                     <pre className="whitespace-pre-wrap leading-snug select-none">{
-                      bootLines.map((l,i)=> (
+                      bootLines.map((l:string,i:number)=> (
                         <div key={i} className={`boot-line ${i < visibleBootCount ? 'visible':''}`}>{l}</div>
                       ))
                     }</pre>
@@ -692,7 +707,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
               )}
               {/* Screensaver / Lock overlay */}
               {locked && (
-                <div className="ss-overlay absolute inset-0 z-[6000] flex flex-col items-center justify-center text-green-200" onKeyDown={(e)=>{ if(e.key==='Enter') tryUnlock(); }}>
+                <div className="ss-overlay absolute inset-0 z-[6000] flex flex-col items-center justify-center text-green-200" onKeyDown={(e:React.KeyboardEvent)=>{ if(e.key==='Enter') tryUnlock(); }}>
                   <div className="ss-glow absolute inset-0" />
                   <div className="ss-scan absolute inset-0" />
                   <div className="relative z-10 flex flex-col items-center gap-3 p-4 rounded border border-green-700 bg-black/60 shadow-[0_0_30px_rgba(0,255,140,0.25)]">
@@ -700,7 +715,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                     <div className="text-[18px] tracking-wide">Retro Lock</div>
                     <div className="flex items-center gap-2">
                       <label className="text-[12px]">Password</label>
-                      <input ref={passRef} value={passInput} onChange={e=> { setPassInput(e.target.value); if(errorMsg) setErrorMsg(null); }} type="password" className="bg-black/70 border border-green-700 text-green-300 text-[12px] px-2 py-1 outline-none focus:border-green-400" placeholder="••••" autoComplete="off" />
+                      <input ref={passRef} value={passInput} onChange={(e:React.ChangeEvent<HTMLInputElement>)=> { setPassInput(e.target.value); if(errorMsg) setErrorMsg(null); }} type="password" className="bg-black/70 border border-green-700 text-green-300 text-[12px] px-2 py-1 outline-none focus:border-green-400" placeholder="••••" autoComplete="off" />
                       <button onClick={tryUnlock} className="text-[12px] border border-green-700 px-2 py-1 hover:bg-green-600/20">Unlock</button>
                     </div>
                     {errorMsg && <div className="text-[10px] text-red-400">{errorMsg}</div>}
