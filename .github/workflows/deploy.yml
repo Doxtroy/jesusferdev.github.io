@@ -21,12 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          # Optional but helps classify the site in Pages settings
-          static_site_generator: vite
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -47,6 +41,11 @@ jobs:
           # Pass GITHUB_REPOSITORY and GITHUB_ACTIONS so vite.config.ts sets correct base
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_ACTIONS: 'true'
+
+      - name: Show build output
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Dist tree:" && ls -la dist && echo "Assets:" && ls -la dist/assets || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
