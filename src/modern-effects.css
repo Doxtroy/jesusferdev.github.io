@@ -1,0 +1,185 @@
+/* CRT Retro Monitor Effects */
+/* Layered: scanlines, subtle phosphor glow, vignette, curvature distortion */
+
+:root {
+	--crt-scanline-color: rgba(0,0,0,0.18);
+	--crt-mask-color: rgba(255,255,255,0.04);
+	--crt-vignette-strength: 0.35;
+	--crt-flicker-min: 0.92;
+	--crt-flicker-max: 1.00;
+}
+
+.crt-wrapper {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	isolation: isolate; /* ensure mix-blend stays contained */
+	overflow: hidden;
+	background: inherit;
+	animation: crt-flicker 4s linear infinite;
+}
+
+/* Scanlines */
+.crt-wrapper::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background:
+		repeating-linear-gradient(
+			to bottom,
+			var(--crt-scanline-color) 0px,
+			var(--crt-scanline-color) 1px,
+			transparent 2px,
+			transparent 3px
+		);
+	mix-blend-mode: multiply;
+	pointer-events: none;
+	opacity: 0.55;
+	animation: crt-roll 16s linear infinite;
+}
+
+/* Aperture grille / mask */
+.crt-wrapper::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: repeating-linear-gradient(
+			90deg,
+			var(--crt-mask-color) 0px,
+			var(--crt-mask-color) 1px,
+			transparent 2px,
+			transparent 3px
+		);
+	mix-blend-mode: overlay;
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+/* Vignette + curvature overlay */
+.crt-vignette {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,var(--crt-vignette-strength)) 100%),
+		linear-gradient( to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.25) );
+	mix-blend-mode: multiply;
+	opacity: 0.9;
+}
+
+/* Subtle inner shadow & border glow to fake curve */
+.crt-inner-bezel {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	box-shadow:
+		inset 0 0 12px rgba(0,0,0,0.7),
+		inset 0 0 60px rgba(0,0,0,0.35),
+		0 0 8px rgba(255,255,255,0.15);
+	border-radius: 1.25% / 2.5%;
+	backdrop-filter: contrast(1.02) brightness(0.98) saturate(1.02);
+}
+
+/* Slight barrel distortion using filter (optional, can be heavy on perf) */
+.crt-distort {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.15));
+	mix-blend-mode: overlay;
+	opacity: 0.25;
+	mask:
+		radial-gradient(ellipse at center, black 60%, transparent 105%);
+}
+
+/* Flicker */
+@keyframes crt-flicker {
+	0%,5%,10%,13%,20%,25%,30%,70%,100% { filter: brightness(1); }
+	2% { filter: brightness(var(--crt-flicker-min)); }
+	12% { filter: brightness(var(--crt-flicker-max)); }
+	28% { filter: brightness(0.96); }
+	42% { filter: brightness(0.99); }
+	55% { filter: brightness(0.94); }
+	85% { filter: brightness(0.98); }
+}
+
+@keyframes crt-roll {
+	from { background-position-y: 0; }
+	to { background-position-y: 100%; }
+}
+
+/* Utility helper to wrap the app */
+.apply-crt > *:first-child {
+	height: 100%;
+}
+
+/* Optional “phosphor” glow for light pixels (can be toggled) */
+.crt-phosphor {
+	position: absolute;
+	inset:0;
+	mix-blend-mode: screen;
+	background:
+		radial-gradient(circle at 20% 30%, rgba(255,255,255,0.06), transparent 60%),
+		radial-gradient(circle at 80% 70%, rgba(255,255,255,0.05), transparent 65%);
+	pointer-events:none;
+	opacity:0.4;
+}
+
+/* Reduce effect intensity on small screens */
+@media (max-width: 640px) {
+	.crt-wrapper::before { opacity:0.4; }
+	.crt-wrapper::after { opacity:0.25; }
+	.crt-vignette { opacity:0.75; }
+}
+
+/* ===================================================== */
+/* Barrel (pincushion) distortion approximation (CSS)    */
+/* Inspired by classic CRT curvature. Uses perspective,  */
+/* scale and radial edge darkening. Adjustable via vars. */
+/* ===================================================== */
+
+/* Variables para la curvatura global de la pantalla */
+:root {
+	--crt-barrel-strength: 0.18; /* 0 a 0.35 recomendado */
+	--crt-barrel-bright-center: 1.04;
+	--crt-barrel-dark-edge: 0.78;
+	--crt-barrel-radius: 68%; /* radio del bulbo */
+}
+
+/* Curvatura aplicada al contenedor completo (crt-wrapper) */
+/* Ligera curvatura amigable (fallback visible) */
+.crt-wrapper.barrelized {
+	--_s: var(--crt-barrel-strength);
+	position:relative;
+	overflow:hidden;
+	border-radius: 2.8% / 4.6%; /* leve redondeo que ayuda a vender la curva */
+}
+
+.crt-wrapper.barrelized::before {
+	content:"";
+	position:absolute;
+	inset:0;
+	pointer-events:none;
+	background:
+		radial-gradient(circle at 50% 50%, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 30%, rgba(0,0,0,0.15) 78%, rgba(0,0,0,0.55) 100%);
+	mix-blend-mode:multiply;
+	opacity:0.9;
+}
+
+/* Stage transform: sutil "bulge" centrado */
+.crt-wrapper.barrelized > .crt-curved-stage {
+	position:absolute; inset:0;
+	transform-origin:center center;
+	/* scale reduce bordes, skewY pequeña + perspective para ilusión */
+	transform: perspective(1200px) scale(0.995) translateZ(0) skewY(calc(var(--_s) * 0.6deg));
+	/* Ajuste fino: puedes añadir skewX si la imagen del monitor lo requiere */
+}
+
+/* Overlays específicos de curvatura (luces/sombras) */
+.crt-curved-stage .crt-barrel-overlay,
+.crt-curved-stage .crt-barrel-specular { display:none; }
+
+/* Ajustes móviles: reducir la fuerza */
+@media (max-width:640px){
+	:root { --crt-barrel-strength: 0.12; }
+}
