@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import monitorPng from '../monitor.png';
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
 import ProjectsBody, { type Project } from './components/ProjectsBody';
@@ -781,7 +782,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
           </div>
           {/* PNG del monitor encima */}
           <img
-            src="/monitor-2.png"
+            src={monitorPng}
             alt="Monitor Bezel"
             draggable={false}
             onLoad={onMonitorLoad}
