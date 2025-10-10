@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  "dev": "node scripts/copy-icons.cjs && vite",
-  "build": "node scripts/copy-icons.cjs && tsc -b && vite build && npm run postbuild",
+    "dev": "vite",
+    "build": "tsc -b && vite build && npm run postbuild",
     "postbuild": "node -e \"const fs=require('fs');fs.copyFileSync('dist/index.html','dist/404.html');\"",
     "lint": "eslint .",
     "preview": "vite preview"

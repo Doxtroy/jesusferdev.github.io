@@ -42,10 +42,6 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_ACTIONS: 'true'
 
-      - name: Show build output
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Dist tree:" && ls -la dist && echo "Assets:" && ls -la dist/assets || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
