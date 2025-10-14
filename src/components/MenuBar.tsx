@@ -8,7 +8,7 @@ interface MenuBarProps {
   closeMenus: () => void;
   menuItems: Record<string, MenuItem[]>;
   menuKeys: string[];
-  bringToFront?: (k: any) => void;
+	bringToFront?: (k: string) => void;
   barHeight?: number; // opcional, por defecto 28
   fontSizePx?: number; // permitir ajustar tipografía si se hace más grande
   horizontalPaddingRatio?: number; // factor para padding horizontal relativo a la altura
@@ -57,7 +57,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
 						<button
 							onClick={(e)=>{ e.stopPropagation(); setOpenMenu(openMenu===key? null : key); }}
                 style={{height:h, lineHeight:h+'px'}}
-                className={`px-2 ${openMenu===key? 'bg-black text-white' : 'hover:bg-black hover:text-white'} transition-colors`}
+				className={`px-2 ${openMenu===key? 'bg-black text-white' : 'hover:bg-black hover:text-white'} transition-colors text-black`}
 						>{key}</button>
 							{openMenu===key && (
 							<div className="absolute left-0 top-full mt-1 w-44 border border-black bg-white shadow-lg z-[500]">
@@ -69,7 +69,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
 												<button
 													disabled={it.disabled}
 													onClick={()=>{ if(it.action) it.action(); closeMenus(); }}
-                        className={`block w-full text-left px-2 py-1 text-[11px] ${it.disabled? 'text-black/40 cursor-not-allowed' : 'hover:bg-black hover:text-white'} transition-colors`}
+						className={`block w-full text-left px-2 py-1 text-[11px] ${it.disabled? 'text-black/40 cursor-not-allowed' : 'hover:bg-black hover:text-white'} transition-colors text-black`}
 												>{it.label}</button>
 											</li>
 										);

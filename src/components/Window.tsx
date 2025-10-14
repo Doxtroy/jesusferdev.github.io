@@ -3,7 +3,7 @@ import WindowChrome from './WindowChrome';
 
 export interface WindowProps {
 	x: number; y: number; w: number; h?: number | 'auto'; z: number; title: string; open: boolean;
-	children: React.ReactNode; onClose: () => void; dragProps?: any; resizeProps?: any; growBox?: boolean; style?: React.CSSProperties;
+	children: React.ReactNode; onClose: () => void; dragProps?: React.HTMLAttributes<HTMLDivElement>; resizeProps?: React.HTMLAttributes<HTMLDivElement>; growBox?: boolean; style?: React.CSSProperties;
 }
 
 const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style }) => {

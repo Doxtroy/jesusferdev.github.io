@@ -101,9 +101,9 @@ const AboutBody: React.FC<AboutBodyProps> = ({
 			</div>
 
 			{/* Footer */}
-			<p className="mt-6 text-center text-[11px] opacity-80">
+			<div className="mt-6 text-center text-[11px] opacity-80">
 				{brand} Corporation © 1991-2085? All Lefts Reserved.<br />Designed en Toledo, ensamblado en la parte de atrás de un coche.
-			</p>
+			</div>
 		</div>
 	);
 };

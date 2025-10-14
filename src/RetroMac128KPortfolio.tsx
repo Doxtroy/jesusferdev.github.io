@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import monitorPng from '../monitor.png';
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
 import ProjectsBody, { type Project } from './components/ProjectsBody';
@@ -13,6 +12,52 @@ import SettingsBody from './components/SettingsBody.tsx';
 type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings';
 interface RetroWindow { key:WinKey; title:string; x:number; y:number; w:number; h?:number; open:boolean; z:number; minimized?:boolean }
 interface DesktopIconType { id:string; label:string; x:number; y:number; openKey?:WinKey; img?:{src:string;w?:number;h?:number} }
+
+// Hoisted WindowBody component (stable identity to avoid remounting children like RetroTerminal)
+type Theme = 'classic' | 'phosphor' | 'amber';
+interface WindowBodyProps {
+  win: RetroWindow;
+  brand: string;
+  projects: Project[];
+  selectedProject: Project | null;
+  onSelectProject: (p: Project | null) => void;
+  onCloseKey: (key: WinKey) => void;
+  theme: Theme;
+  onThemeChange: (t: Theme) => void;
+  screensaverMs: number;
+  onScreensaverMsChange: (n: number) => void;
+}
+
+const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange }) => {
+  switch (win.key) {
+    case 'about':
+      return <AboutBody brand={brand} />;
+    case 'social':
+      return <SocialBody LINKS={{ github: 'https://github.com/JesusFerDev' }} />;
+    case 'projects':
+      return <ProjectsBody list={projects} selected={selectedProject} onSelect={onSelectProject} />;
+    case 'terminal':
+      return (
+        <RetroTerminal
+          onRequestClose={() => onCloseKey('terminal')}
+          projects={projects}
+          social={{ github: 'https://github.com/JesusFerDev' }}
+          brand={brand}
+        />
+      );
+    case 'settings':
+      return (
+        <SettingsBody
+          theme={theme}
+          onThemeChange={onThemeChange}
+          screensaverMs={screensaverMs}
+          onScreensaverMsChange={onScreensaverMsChange}
+        />
+      );
+    default:
+      return null;
+  }
+};
 
 // Utils / persistence
 const clamp = (v:number,min:number,max:number)=> Math.max(min, Math.min(max,v));
@@ -68,7 +113,6 @@ export default function RetroMac128KPortfolio(){
   const base = computeBase();
 
   // Theme state (classic grayscale vs green phosphor vs amber)
-  type Theme = 'classic' | 'phosphor' | 'amber';
   const [theme,setTheme] = useState<Theme>(()=> {
     const t = localStorage.getItem('retro-theme');
     return (t==='phosphor'||t==='classic'||t==='amber')? (t as Theme) : 'classic';
@@ -130,6 +174,19 @@ export default function RetroMac128KPortfolio(){
     { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src:`${base}icons/projects.png`} }
   ];
   const [icons,setIcons] = useState<DesktopIconType[]>(()=> loadIcons() ?? defaultIcons);
+  // Migrate old persisted icon src (e.g., '/icons/x.png') to base-prefixed paths once
+  useEffect(()=>{
+    let changed = false;
+    const normalized = icons.map(ic=>{
+      const src = ic.img?.src;
+      if(!src) return ic;
+      if(src.startsWith('/icons/')){ changed = true; return { ...ic, img: { ...ic.img!, src: `${base}${src.slice(1)}` } }; }
+      if(src.startsWith('icons/')){ changed = true; return { ...ic, img: { ...ic.img!, src: `${base}${src}` } }; }
+      return ic;
+    });
+    if(changed) setIcons(normalized);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[base]);
   useEffect(()=> saveIcons(icons),[icons]);
   const [selectedIcons,setSelectedIcons] = useState<string[]>([]);
   const [dragIconId,setDragIconId] = useState<string|null>(null);
@@ -204,6 +261,8 @@ export default function RetroMac128KPortfolio(){
     // resetLayout(); setIcons(defaultIcons);
   };
 
+  // Responsive: sin monitor, la pantalla ocupará todo el viewport
+
   // Menu bar items
   const [openMenu,setOpenMenu] = useState<string|null>(null); const closeMenus=()=> setOpenMenu(null);
   const menuItems = {
@@ -259,30 +318,7 @@ export default function RetroMac128KPortfolio(){
     <path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='black'/>
   </svg>`);
 
-  const WindowBody:React.FC<{win:RetroWindow}> = ({ win }: { win: RetroWindow }) => {
-    switch(win.key){
-      case 'about': return <AboutBody brand={BRAND}/>;
-      case 'social': return <SocialBody LINKS={{ github:'https://github.com/JesusFerDev' }}/>;
-      case 'projects': return <ProjectsBody list={projects} selected={selectedProject} onSelect={setSelectedProject}/>;
-      case 'terminal': return (
-        <RetroTerminal
-          onRequestClose={()=> setOpen('terminal', false)}
-          projects={projects}
-          social={{ github:'https://github.com/JesusFerDev' }}
-          brand={BRAND}
-        />
-      );
-      case 'settings': return (
-        <SettingsBody
-          theme={theme}
-          onThemeChange={(t:Theme)=> setTheme(t)}
-          screensaverMs={screensaverMs}
-          onScreensaverMsChange={setScreensaverMs}
-        />
-      );
-      default: return null;
-    }
-  };
+  // (WindowBody moved to module scope to avoid remounting children)
 
   // ================== CURVATURA DEBUG ==================
   // Valor normalizado 0..0.4 aprox (0 = plano, 0.4 = muy curvo)
@@ -316,84 +352,16 @@ export default function RetroMac128KPortfolio(){
     return `perspective(${perspective}px) scale(${scale.toFixed(4)}) translateZ(0) skewY(${skewYdeg.toFixed(3)}deg)`;
   },[curvature]);
 
-  // ================== MONITOR IMAGE CONTROL ==================
-  // Permite control preciso del PNG del monitor (posición y escala)
-  const [monitorY,setMonitorY] = useState<number>(134.5);
-    //()=> {
-    //const v = localStorage.getItem('monitor-y');
-    //return v? parseFloat(v): 134.5; // px
-  //});
-  const [monitorX,setMonitorX] = useState<number>(()=> {
-    const v = localStorage.getItem('monitor-x');
-    return v? parseFloat(v): 0; // px
-  });
-  const [monitorScale,setMonitorScale] = useState<number>(()=> {
-    const v = localStorage.getItem('monitor-scale');
-    return v? parseFloat(v): 1; // factor
-  });
-  const [monitorBaseHeight,setMonitorBaseHeight] = useState<number>(()=> {
-    const v = localStorage.getItem('monitor-base-height');
-    const parsed = v? parseFloat(v): 1700;
-    return isNaN(parsed)? 1700 : parsed;
-  });
-  const [showMonitorDebug,setShowMonitorDebug] = useState<boolean>(()=> localStorage.getItem('monitor-debug')==='1');
-  useEffect(()=> { localStorage.setItem('monitor-y', String(monitorY)); },[monitorY]);
-  useEffect(()=> { localStorage.setItem('monitor-x', String(monitorX)); },[monitorX]);
-  useEffect(()=> { localStorage.setItem('monitor-scale', String(monitorScale)); },[monitorScale]);
-  useEffect(()=> { localStorage.setItem('monitor-base-height', String(monitorBaseHeight)); },[monitorBaseHeight]);
-  useEffect(()=> { if(showMonitorDebug) localStorage.setItem('monitor-debug','1'); else localStorage.removeItem('monitor-debug'); },[showMonitorDebug]);
-  // Toggle debug Alt+M
-  useEffect(()=> {
-  const handler = (e:KeyboardEvent)=> { if(e.altKey && (e.key==='m' || e.key==='M')) setShowMonitorDebug((p:boolean)=>!p); };
-    window.addEventListener('keydown', handler);
-    return ()=> window.removeEventListener('keydown', handler);
-  },[]);
-  const monitorTransform = `translate(-50%, -50%) translate(${monitorX}px, ${monitorY}px) scale(${monitorScale})`;
-
-  // Bounding box de la "pantalla" dentro del PNG (porcentajes relativos al tamaño del monitor renderizado)
-  const [screenTopPct,setScreenTopPct] = useState<number>(0.177);
-  //  const v = localStorage.getItem('screen-top-pct');
-  //  return v? parseFloat(v): 0.177; // 19% (aprox) -> ajustable
-  //});
-  const [screenLeftPct,setScreenLeftPct] = useState<number>(0.208);//()=> {
-  //  const v = localStorage.getItem('screen-left-pct');
-  //  return v? parseFloat(v): 0.208; // 14.5%
-  //});
-  const [screenWidthPct,setScreenWidthPct] = useState<number>(0.592);//()=> {
-  //  const v = localStorage.getItem('screen-width-pct');
-  //  return v? parseFloat(v): 0.592; // 71%
-  //});
-  const [screenHeightPct,setScreenHeightPct] = useState<number>(0.454);//()=> {
-  //  const v = localStorage.getItem('screen-height-pct');
-  //  return v? parseFloat(v): 0.454; // 56%
-  //});
-  useEffect(()=> { localStorage.setItem('screen-top-pct', String(screenTopPct)); },[screenTopPct]);
-  useEffect(()=> { localStorage.setItem('screen-left-pct', String(screenLeftPct)); },[screenLeftPct]);
-  useEffect(()=> { localStorage.setItem('screen-width-pct', String(screenWidthPct)); },[screenWidthPct]);
-  useEffect(()=> { localStorage.setItem('screen-height-pct', String(screenHeightPct)); },[screenHeightPct]);
+  // Eliminado: controles y bounding box del monitor PNG
 
   // Medimos aspecto real del PNG para calcular anchura base coherente
-  const [monitorAspect,setMonitorAspect] = useState<number>(()=> {
-    const v = localStorage.getItem('monitor-aspect');
-    return v? parseFloat(v): 1.3; // ancho/alto estimado inicial
-  });
-  const onMonitorLoad = (e:React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if(img.naturalHeight>0){
-      const aspect = img.naturalWidth / img.naturalHeight;
-      setMonitorAspect(aspect);
-      localStorage.setItem('monitor-aspect', String(aspect));
-    }
-  };
-  const monitorPixelHeight = monitorBaseHeight; // altura base antes de escalar
-  const monitorPixelWidth = monitorPixelHeight * monitorAspect;
-  // Bounding box en píxeles (sin escala) para debugging
-  const screenRectPx = {
-    top: screenTopPct * monitorPixelHeight,
-    left: screenLeftPct * monitorPixelWidth,
-    width: screenWidthPct * monitorPixelWidth,
-    height: screenHeightPct * monitorPixelHeight
-  };
+  // Eliminado: cálculo de aspecto/anchuras del monitor
+
+  // ====== Auto-fit: alinear pantalla dentro del monitor en cualquier resolución ======
+  // Cuando está activo, calcula escala y offset para que la "pantalla" ocupe casi todo el alto
+  // dejando un pequeño margen por arriba y abajo para que se vea el monitor.
+
+  // Sin auto-fit: la pantalla ya ocupa el viewport
 
   
 
@@ -660,33 +628,20 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
           </filter>
         </svg>
       )}
-      {/* Stage central: contiene pantalla y monitor, ambos escalados juntos para mantener alineación */}
+      {/* Responsive stage: screen fills the viewport, no external monitor image */}
       <div className="absolute inset-0" style={{ overflow:'hidden' }}>
         <div
-          className="absolute left-1/2 top-1/2 origin-center"
+          ref={screenRef}
+          className={`crt-wrapper barrelized absolute inset-0 border border-black/30 ${theme==='phosphor' ? 'theme-phosphor' : theme==='amber' ? 'theme-amber' : 'theme-classic'}`}
           style={{
-            transform: monitorTransform,
-            width: monitorPixelWidth + 'px',
-            height: monitorPixelHeight + 'px'
+            // theme applied here via CSS variables
+            ['--screen-bg' as any]: theme==='phosphor'? '#071a07' : theme==='amber'? '#140c00' : '#f2f2f2',
+            ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111'
           }}
+          onPointerMove={(e:React.PointerEvent)=>{iconMove(e); onBackgroundPointerMove(e);}}
+          onPointerUp={(e:React.PointerEvent)=>{iconUp(e); onBackgroundPointerUp();}}
+          onPointerDown={onBackgroundPointerDown}
         >
-          {/* Pantalla anclada por porcentajes al PNG */}
-          <div
-            ref={screenRef}
-            className={`crt-wrapper barrelized border border-black/30 absolute ${theme==='phosphor' ? 'theme-phosphor' : theme==='amber' ? 'theme-amber' : 'theme-classic'}`}
-            style={{
-              // theme applied here via CSS variables
-              ['--screen-bg' as any]: theme==='phosphor'? '#071a07' : theme==='amber'? '#140c00' : '#f2f2f2',
-              ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111',
-              top: (screenTopPct*100)+'%',
-              left: (screenLeftPct*100)+'%',
-              width: (screenWidthPct*100)+'%',
-              height: (screenHeightPct*100)+'%'
-            }}
-            onPointerMove={(e:React.PointerEvent)=>{iconMove(e); onBackgroundPointerMove(e);}}
-            onPointerUp={(e:React.PointerEvent)=>{iconUp(e); onBackgroundPointerUp();}}
-            onPointerDown={onBackgroundPointerDown}
-          >
               {booting && (
                 <div className={`boot-overlay absolute inset-0 z-[5000] flex flex-col px-4 py-3 font-mono overflow-hidden ${bootDone?'fade-out':''}`} style={{background:'#000'}}>
                   <div className="relative flex-1 boot-scanline">
@@ -768,7 +723,18 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
               </div>
               {wins.map(w=> (
                 <Window key={w.key} x={w.x} y={w.y} w={w.w} h={w.h} z={w.z} title={w.title} open={w.open} onClose={()=> setOpen(w.key,false)} dragProps={useDragWin(w.key)} resizeProps={useResizeWin(w.key)} growBox>
-                  <WindowBody win={w} />
+                  <WindowBody
+                    win={w}
+                    brand={BRAND}
+                    projects={projects}
+                    selectedProject={selectedProject}
+                    onSelectProject={setSelectedProject}
+                    onCloseKey={(key)=> setOpen(key,false)}
+                    theme={theme}
+                    onThemeChange={setTheme}
+                    screensaverMs={screensaverMs}
+                    onScreensaverMsChange={setScreensaverMs}
+                  />
                 </Window>
               ))}
               <div className="crt-barrel-overlay" />
@@ -780,29 +746,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             <div className="crt-phosphor" />
             <div className="crt-distort" />
           </div>
-          {/* PNG del monitor encima */}
-          <img
-            src={monitorPng}
-            alt="Monitor Bezel"
-            draggable={false}
-            onLoad={onMonitorLoad}
-            className="absolute inset-0 w-full h-full pointer-events-none select-none"
-            style={{ imageRendering:'crisp-edges' }}
-          />
-          {/* Overlay de bounding box para debug (opcional) */}
-          {showMonitorDebug && (
-            <div className="absolute" style={{
-              top: (screenTopPct*100)+'%',
-              left: (screenLeftPct*100)+'%',
-              width: (screenWidthPct*100)+'%',
-              height: (screenHeightPct*100)+'%',
-              outline: '2px dashed rgba(0,255,200,0.7)',
-              pointerEvents:'none',
-              zIndex: 140
-            }} />
-          )}
         </div>
-      </div>
     {/* Screensaver styles */}
     <style>{`
     @keyframes ssFlicker { 0%,100%{ opacity:0.98 } 50% { opacity:1 } }
@@ -871,52 +815,14 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-amber .text-black, .theme-amber .text-white, .theme-amber [class*='text-black/'], .theme-amber [class*='text-white/']{ color: var(--screen-fg,#ffd89a) !important; }
             /* Inputs */
             .theme-amber input, .theme-amber textarea, .theme-amber select{ background-color: rgba(26,18,0,0.62) !important; border-color: rgba(255,200,120,0.26) !important; color: var(--screen-fg,#ffd89a) !important; }
+
+            /* Classic theme: ensure menu hover text is legible (white on black) */
+            .theme-classic [data-menu-bar] button { color: #111 !important; }
+            .theme-classic [data-menu-bar] button:hover { color: #fff !important; }
+            .theme-classic [data-menu-bar] button.bg-black { color: #fff !important; }
+            .theme-classic [data-menu-bar] .hover\:text-white:hover { color: #fff !important; }
           `}</style>
-      {showMonitorDebug && (
-        <div className="absolute top-2 left-2 z-[200] bg-black/80 text-white text-[10px] font-mono p-2 rounded shadow backdrop-blur min-w-[260px] max-w-[300px] space-y-1">
-          <div className="flex items-center mb-1 justify-between"><span className="opacity-80">Monitor & Screen Debug</span><button onClick={()=>setShowMonitorDebug(false)} className="px-1 border border-white/30 rounded hover:bg-red-500/70">×</button></div>
-          <div className="text-[9px] opacity-70">Aspect: {monitorAspect.toFixed(4)} | Base WxH: {Math.round(monitorPixelWidth)}×{monitorPixelHeight}px</div>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-            <label className="block">Scale {monitorScale.toFixed(3)}
-              <input type="range" min={0.3} max={2.4} step={0.002} value={monitorScale} onChange={e=> setMonitorScale(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">Height {monitorBaseHeight}px
-              <input type="range" min={800} max={2600} step={1} value={monitorBaseHeight} onChange={e=> setMonitorBaseHeight(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">X {monitorX.toFixed(1)}px
-              <input type="range" min={-800} max={800} step={0.5} value={monitorX} onChange={e=> setMonitorX(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">Y {monitorY.toFixed(1)}px
-              <input type="range" min={-800} max={800} step={0.5} value={monitorY} onChange={e=> setMonitorY(parseFloat(e.target.value))} />
-            </label>
-          </div>
-          <hr className="border-white/20 my-1" />
-          <div className="text-[9px] opacity-70">Screen Bounds (pct)</div>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-            <label className="block">Top {(screenTopPct*100).toFixed(2)}%
-              <input type="range" min={0} max={0.5} step={0.001} value={screenTopPct} onChange={e=> setScreenTopPct(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">Left {(screenLeftPct*100).toFixed(2)}%
-              <input type="range" min={0} max={0.5} step={0.001} value={screenLeftPct} onChange={e=> setScreenLeftPct(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">Width {(screenWidthPct*100).toFixed(2)}%
-              <input type="range" min={0.2} max={0.95} step={0.001} value={screenWidthPct} onChange={e=> setScreenWidthPct(parseFloat(e.target.value))} />
-            </label>
-            <label className="block">Height {(screenHeightPct*100).toFixed(2)}%
-              <input type="range" min={0.2} max={0.9} step={0.001} value={screenHeightPct} onChange={e=> setScreenHeightPct(parseFloat(e.target.value))} />
-            </label>
-          </div>
-          <div className="text-[9px] opacity-70">Rect px: top {Math.round(screenRectPx.top)}, left {Math.round(screenRectPx.left)}, w {Math.round(screenRectPx.width)}, h {Math.round(screenRectPx.height)}</div>
-          <div className="flex gap-1 flex-wrap mt-1">
-            {[1,0.9,1.1,1.2].map(s=> <button key={s} onClick={()=> setMonitorScale(s)} className={`px-1 py-[1px] border border-white/30 rounded ${Math.abs(monitorScale-s)<0.0009?'bg-white text-black':'hover:bg-white/20'}`}>{s}</button>)}
-            {[1400,1700,1900].map(h=> <button key={h} onClick={()=> setMonitorBaseHeight(h)} className={`px-1 py-[1px] border border-white/30 rounded ${Math.abs(monitorBaseHeight-h)<1?'bg-white text-black':'hover:bg-white/20'}`}>{h}</button>)}
-            <button onClick={()=> { setMonitorX(0); setMonitorY(0); setMonitorScale(1); }} className="px-1 py-[1px] border border-white/30 rounded hover:bg-white/20">reset pos</button>
-            <button onClick={()=> { setScreenTopPct(0.19); setScreenLeftPct(0.145); setScreenWidthPct(0.71); setScreenHeightPct(0.56); }} className="px-1 py-[1px] border border-white/30 rounded hover:bg-white/20">reset bounds</button>
-            <button onClick={()=> { setMonitorX(0); setMonitorY(0); setMonitorScale(1); setMonitorBaseHeight(1700); setScreenTopPct(0.19); setScreenLeftPct(0.145); setScreenWidthPct(0.71); setScreenHeightPct(0.56); }} className="px-1 py-[1px] border border-white/30 rounded hover:bg-white/20">full reset</button>
-          </div>
-          <p className="mt-1 text-[9px] opacity-60">Alt+M toggle panel</p>
-        </div>
-      )}
+      {/* monitor debug panel removed in responsive version */}
     </div>
   );
 }

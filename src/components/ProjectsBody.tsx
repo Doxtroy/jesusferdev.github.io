@@ -160,7 +160,7 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
           </div>
           <div className="p-3 flex flex-col gap-3 overflow-auto text-[11px]">
             <div className="mx-auto border border-black bg-white p-1 shadow-[4px_4px_0_#0003]">
-              <img src={active.image} alt={active.title} className="h-28 w-28 object-cover" style={{imageRendering:'pixelated' as any}} />
+              <img src={active.image} alt={active.title} className="h-28 w-28 object-cover" style={{ imageRendering: 'pixelated' as React.CSSProperties['imageRendering'] }} />
             </div>
             <div>
               <p className="font-bold text-[12px] mb-1">{active.title}</p>

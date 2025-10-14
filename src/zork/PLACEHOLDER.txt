@@ -1,0 +1,2 @@
+This folder contains the VisiZorkEngine.ts used by the RetroTerminal Zork demo.
+Legacy and unused engines (ZorkSpanishEngine, GlulxVM, MicroGlk) were removed to trim the repo.

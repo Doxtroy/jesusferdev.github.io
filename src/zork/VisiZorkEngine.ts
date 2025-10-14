@@ -22,6 +22,22 @@ import zorkImageJs from '../../visizork-master/js/zork1-r88-s840726.z3.js?raw';
 
 export interface LoadProgress { percent: number; label: string }
 
+// Minimal typings for the injected Gnusto runtime
+type VMReportInfo = { MAX_OBJECTS:number; MAX_GLOBALS:number; PROP_TABLE_START:number; PROP_TABLE_END:number; C_TABLE_LEN:number; C_TABLE_GLOB:number };
+interface GnustoEngineAPI {
+  loadStory(image: Uint8Array): void;
+  prepare_vm_report?(info: VMReportInfo): void;
+  reset_vm_report?(): void;
+  run(): void;
+  consoleText?(): string;
+  effect?(index: number): string | undefined;
+  answer?(index: number, value: number | string): void;
+  saveGame?(): void;
+  saveGameData?(): Uint8Array;
+  loadSavedGame?(bytes: Uint8Array): void;
+}
+type GnustoEngineCtor = new (log: (msg: string)=>void) => GnustoEngineAPI;
+
 export interface VisiZorkEngine {
   readonly ready: boolean;
   readonly introLines?: string[];
@@ -32,7 +48,11 @@ export interface VisiZorkEngine {
 }
 
 export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Promise<VisiZorkEngine> {
-  const G = globalThis as any;
+  const G = globalThis as typeof globalThis & {
+    GnustoEngine?: GnustoEngineCtor;
+    gameimage?: Uint8Array;
+    processBase64Zcode?: (b64: string)=>void;
+  };
   // Step 1: inject minimal helper for base64 story loader used by zork1-*.js
   onProgress({ percent: 5, label: 'Preparando runtime' });
   ensureProcessBase64();
@@ -54,10 +74,11 @@ export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Pr
 
   // Step 4: bootstrap engine and run until first input
   onProgress({ percent: 85, label: 'Inicializando motor' });
-  const engine = new G.GnustoEngine((_msg: string)=>{ /* optional log */ });
+  const EngineCtor = G.GnustoEngine as GnustoEngineCtor;
+  const engine: GnustoEngineAPI = new EngineCtor((_msg: string)=>{ /* optional log */ });
   engine.loadStory(G.gameimage);
   // Minimal VM report setup to avoid references failing; mirrors GnustoRunner.init
-  try { engine.prepare_vm_report?.({ MAX_OBJECTS: 0, MAX_GLOBALS: 0, PROP_TABLE_START: 0, PROP_TABLE_END: 0, C_TABLE_LEN: 0, C_TABLE_GLOB: 0 }); } catch {}
+  try { engine.prepare_vm_report?.({ MAX_OBJECTS: 0, MAX_GLOBALS: 0, PROP_TABLE_START: 0, PROP_TABLE_END: 0, C_TABLE_LEN: 0, C_TABLE_GLOB: 0 }); } catch { /* ignore */ }
 
   // Helper: run engine to next input or output flush
   const captureLines = (txt: string): string[] => txt.split(/\r?\n/).map(s=>s.replace(/\u0000/g,'')).filter(Boolean);
@@ -66,10 +87,10 @@ export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Pr
     let guard = 0;
     while (guard++ < 2000) {
       try {
-        try { engine.reset_vm_report?.(); } catch {}
+        try { engine.reset_vm_report?.(); } catch { /* ignore */ }
         engine.run();
       } catch (e) { out.push('[error] '+(e as Error).message); break; }
-      const txt = engine.consoleText?.() || '';
+  const txt = engine.consoleText?.() || '';
       if (txt) out.push(...captureLines(txt));
       const eff0 = engine.effect?.(0);
   // Stop only when engine is waiting for input, or quit/save/restore
@@ -86,7 +107,7 @@ export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Pr
   function doSave(): boolean {
     try {
       engine.saveGame?.();
-      const bytes: Uint8Array = engine.saveGameData?.();
+      const bytes = engine.saveGameData?.();
       if (!bytes || !bytes.length) return false;
       const b64 = u8ToB64(bytes);
       localStorage.setItem(LS_KEY, b64);
@@ -123,12 +144,12 @@ export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Pr
       try {
         engine.answer?.(0, 13);
         engine.answer?.(1, cmd || '');
-      } catch {}
+      } catch { /* ignore */ }
 
       const out: string[] = [];
       let guard = 0;
       while (guard++ < 2000) {
-        try { engine.reset_vm_report?.(); } catch {}
+        try { engine.reset_vm_report?.(); } catch { /* ignore */ }
         engine.run();
         const eff = engine.effect?.(0);
         const txt = engine.consoleText?.() || '';
@@ -136,12 +157,12 @@ export async function loadVisiZorkEngine(onProgress: (p:LoadProgress)=>void): Pr
         // Handle SAVE/RESTORE effects initiated by game
         if (eff === 'DS') { // SAVE
           const ok = doSave();
-          try { engine.answer?.(0, ok ? 1 : 0); } catch {}
+          try { engine.answer?.(0, ok ? 1 : 0); } catch { /* ignore */ }
           continue;
         }
         if (eff === 'DR') { // RESTORE
           const ok = doRestore();
-          try { engine.answer?.(0, ok ? 1 : 0); } catch {}
+          try { engine.answer?.(0, ok ? 1 : 0); } catch { /* ignore */ }
           continue;
         }
         if (eff === 'RS' || eff === 'RC' || eff === 'QU') break;
@@ -168,7 +189,7 @@ function injectScriptText(code: string, id: string){
 }
 
 function ensureProcessBase64(){
-  const G = globalThis as any;
+  const G = globalThis as typeof globalThis & { processBase64Zcode?: (b64:string)=>void; gameimage?: Uint8Array };
   if (typeof G.processBase64Zcode === 'function') return;
   G.processBase64Zcode = function(base64data: string){
     const data = atob(base64data);
