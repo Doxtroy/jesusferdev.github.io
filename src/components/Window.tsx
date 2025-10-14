@@ -9,9 +9,9 @@ export interface WindowProps {
 const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style }) => {
 	if (!open) return null;
 	return (
-		<div data-window className="window-main absolute bg-white border border-black shadow-lg" style={{ left:x, top:y, width:w, height: h==='auto'? undefined : h, zIndex:z, minWidth:260, minHeight:160, ...style }}>
+			<div data-window className="window-main absolute bg-white border border-black shadow-lg" style={{ left:x, top:y, width:w, height: h==='auto'? undefined : h, zIndex:z, minWidth:260, minHeight:160, ...style }}>
 			<WindowChrome title={title} onClose={onClose} dragProps={dragProps} />
-			<div className={h==='auto'? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-hidden'}>
+				<div className={(h==='auto'? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-hidden') + ' win-content'}>
 				{children}
 				{growBox && (
 					<div className="absolute right-0 bottom-0 h-6 w-6 cursor-nwse-resize" style={{ zIndex:2 }} {...resizeProps}>

@@ -9,21 +9,29 @@ export interface DesktopIconProps {
 	isSelected?: boolean;
 	onDoubleClick?: () => void;
 	onPointerDown?: (e: React.PointerEvent) => void;
+  boxPx?: number; // optional: base box width for responsive sizing (default 92)
 }
 
-const DesktopIcon: React.FC<DesktopIconProps> = ({ label, x, y, img, isSelected, onDoubleClick, onPointerDown }) => {
+const DesktopIcon: React.FC<DesktopIconProps> = ({ label, x, y, img, isSelected, onDoubleClick, onPointerDown, boxPx }) => {
+	const box = Math.round(boxPx || 92);
+	const boxH = Math.round(box * 1.13); // preserve original aspect (104/92)
+	const inner = Math.round(box * 0.696); // was w-16 (64) vs base 92
+	const imgSz = Math.round(box * 0.522); // was 48 vs base 92
+	const labelFont = Math.max(10, Math.round(box * 0.12));
 	return (
 		<div
 			data-icon
-			style={{ left: x, top: y, position: 'absolute', width: 92, height: 104 }}
+			style={{ left: x, top: y, position: 'absolute', width: box, height: boxH }}
 			onDoubleClick={onDoubleClick}
 			onPointerDown={onPointerDown}
-			className={`select-none text-center text-[11px] ${isSelected ? 'outline outline-1 outline-black' : ''}`}
+			className={`select-none text-center ${isSelected ? 'outline outline-1 outline-black' : ''}`}
 		>
-			<div className={`mx-auto grid h-16 w-16 place-items-center bg-white ring-1 ring-black ${isSelected ? 'border border-black border-dotted' : ''}`}>
-				{img ? <img src={img.src} alt="" className="h-12 w-12 object-contain" draggable={false} /> : <div className="h-12 w-12 bg-black" />}
+			<div className={`mx-auto grid place-items-center bg-white ring-1 ring-black ${isSelected ? 'border border-black border-dotted' : ''}`}
+				style={{ width: inner, height: inner }}
+			>
+				{img ? <img src={img.src} alt="" style={{ width: imgSz, height: imgSz }} className="object-contain" draggable={false} /> : <div style={{ width: imgSz, height: imgSz }} className="bg-black" />}
 			</div>
-			<span className="mt-1 inline-block border border-black bg-white px-1">{label}</span>
+			<span className="mt-1 inline-block border border-black bg-white px-1" style={{ fontSize: labelFont }}>{label}</span>
 		</div>
 	);
 };

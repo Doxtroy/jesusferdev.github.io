@@ -154,14 +154,17 @@ export default function RetroTerminal({
 
   const onSubmit=async (e:React.FormEvent)=>{ e.preventDefault(); const v=input; setInput(''); await handle(v); };
 
+  const isMobile = typeof window !== 'undefined' && (window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches);
+  const baseText = isMobile ? 'text-[13px]' : 'text-[12px]';
+  const pad = isMobile ? 'p-3' : 'p-2';
   return (
-    <div className="w-full h-full bg-[#111] text-green-400 font-mono text-[12px] flex flex-col">
-      <div ref={viewRef} className="flex-1 overflow-auto p-2 space-y-[2px]">
+    <div className={`w-full h-full bg-[#111] text-green-400 font-mono ${baseText} flex flex-col`}>
+      <div ref={viewRef} className={`flex-1 overflow-auto ${pad} space-y-[2px]`}>
         {lines.map(l=> <div key={l.id} className={l.kind==='cmd'?'text-green-200': l.kind==='err'?'text-red-400':'text-green-400'}>{l.text}</div>)}
       </div>
       <form onSubmit={onSubmit} className="flex border-t border-green-700">
-        <span className="px-2 py-1">$</span>
-        <input autoFocus value={input} onChange={e=> setInput(e.target.value)} className="flex-1 bg-[#111] text-green-300 outline-none px-0 py-1" />
+        <span className={`px-2 ${isMobile? 'py-2' : 'py-1'}`}>$</span>
+        <input autoFocus value={input} onChange={e=> setInput(e.target.value)} className={`flex-1 bg-[#111] text-green-300 outline-none px-0 ${isMobile? 'py-2 text-[13px]' : 'py-1'}`} />
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { MailIcon, MonitorIcon, ChatIcon, GlobeIcon } from './components/icons/RetroIcons';
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
 import ProjectsBody, { type Project } from './components/ProjectsBody';
@@ -70,7 +71,30 @@ export default function RetroMac128KPortfolio(){
   const BRAND='JesusFerDev';
   const screenRef = useRef<HTMLDivElement>(null);
   const [maxZ,setMaxZ] = useState(10);
-  const MENU_BAR_HEIGHT = 32; // altura visual de la barra superior (ajustable)
+  // Mobile detection
+  const [isMobile,setIsMobile] = useState<boolean>(false);
+  const [viewport,setViewport] = useState<{w:number;h:number}>(()=> ({ w: typeof window!=='undefined'? window.innerWidth: 1024, h: typeof window!=='undefined'? window.innerHeight: 768 }));
+  useEffect(()=>{
+    const check = () => {
+      const mqNarrow = window.matchMedia('(max-width: 768px)').matches;
+      const mqCoarse = window.matchMedia('(pointer: coarse)').matches;
+      setIsMobile(mqNarrow || mqCoarse);
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    };
+    check();
+    window.addEventListener('resize', check);
+    return ()=> window.removeEventListener('resize', check);
+  },[]);
+  // Responsive desktop icon sizing for mobile
+  const mobileIconBox = useMemo(()=>{
+    if(!isMobile) return 92;
+    // Prefer 2 columns for larger, more accessible touch targets on mobile
+    const gap = 20;
+    const targetCols = 2; // favor bigger icons over more columns
+    const box = Math.floor((viewport.w - 32 - (targetCols-1)*gap) / targetCols);
+    return clamp(box, 100, 160);
+  },[isMobile, viewport.w]);
+  const MENU_BAR_HEIGHT = isMobile? 56 : 32; // altura visual de la barra superior (touch-friendly en móvil)
 
   // Layout base
   type WinDef = { x:number; y:number; w:number; h?:number };
@@ -119,7 +143,14 @@ export default function RetroMac128KPortfolio(){
   });
   useEffect(()=> { localStorage.setItem('retro-theme', theme); },[theme]);
 
-  const bringToFront = (key:WinKey)=> setWins((p:RetroWindow[])=>{ const next=maxZ+1; setMaxZ(next); return p.map((w:RetroWindow)=> w.key===key? { ...w, z:next, open:true, minimized:false }:w); });
+  // En móvil preferimos una sola ventana activa a la vez
+  const bringToFront = (key:WinKey)=> setWins((p:RetroWindow[])=>{
+    const next = maxZ + 1; setMaxZ(next);
+    if(isMobile){
+      return p.map((w:RetroWindow)=> w.key===key? { ...w, z:next, open:true, minimized:false } : { ...w, open:false });
+    }
+    return p.map((w:RetroWindow)=> w.key===key? { ...w, z:next, open:true, minimized:false }:w);
+  });
   const setOpen = (key:WinKey, open:boolean) => setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=> w.key===key? { ...w, open }: w));
 
   // Window actions
@@ -164,6 +195,32 @@ export default function RetroMac128KPortfolio(){
   const onPointerMove=(e:React.PointerEvent)=>{ if(!start.current) return; const dx=e.clientX-start.current.x; const dy=e.clientY-start.current.y; const bounds=screenRef.current?.getBoundingClientRect(); const bw=(bounds?.width||1200)-6; const bh=(bounds?.height||800)-6; setWins((p:RetroWindow[])=> p.map((w:RetroWindow)=>{ if(w.key!==key) return w; let newW=clamp(start.current!.w+dx,260,1500); let newH=clamp(start.current!.h+dy,160,900); newW=Math.min(newW, bw - w.x); newH=Math.min(newH, bh - w.y); return { ...w, w:newW, h:newH }; })); };
     const onPointerUp=(e:React.PointerEvent)=>{ (e.target as HTMLElement).releasePointerCapture(e.pointerId); start.current=null; };
     return { onPointerDown,onPointerMove,onPointerUp };
+  };
+
+  // Always create drag/resize props for each window key in a fixed order (to preserve hooks order)
+  const dragAbout = useDragWin('about');
+  const dragProjects = useDragWin('projects');
+  const dragSocial = useDragWin('social');
+  const dragTerminal = useDragWin('terminal');
+  const dragSettings = useDragWin('settings');
+  const resizeAbout = useResizeWin('about');
+  const resizeProjects = useResizeWin('projects');
+  const resizeSocial = useResizeWin('social');
+  const resizeTerminal = useResizeWin('terminal');
+  const resizeSettings = useResizeWin('settings');
+  const dragMap: Record<WinKey, { onPointerDown:(e:React.PointerEvent)=>void; onPointerMove:(e:React.PointerEvent)=>void; onPointerUp:(e:React.PointerEvent)=>void }> = {
+    about: dragAbout,
+    projects: dragProjects,
+    social: dragSocial,
+    terminal: dragTerminal,
+    settings: dragSettings
+  };
+  const resizeMap: typeof dragMap = {
+    about: resizeAbout,
+    projects: resizeProjects,
+    social: resizeSocial,
+    terminal: resizeTerminal,
+    settings: resizeSettings
   };
 
   // Desktop icons
@@ -216,6 +273,7 @@ export default function RetroMac128KPortfolio(){
 
   // Background mouse down for marquee
   const onBackgroundPointerDown = (e:React.PointerEvent) => {
+    if(isMobile) return; // deshabilitar selección por lazo en móvil
     const target = e.target as HTMLElement;
     if(target.closest('[data-icon]')) return; // icon
     if(target.closest('[data-window]')) return; // window drag
@@ -682,9 +740,9 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   </div>
                 </div>
               )}
-            <div className="crt-curved-stage absolute inset-0" style={{ transform: curvedTransform }}>
+              <div className="crt-curved-stage absolute inset-0" style={{ transform: curvedTransform }}>
               <div data-menu-bar className="relative z-50" >
-                <MenuBar brand={BRAND} openMenu={openMenu} setOpenMenu={setOpenMenu} closeMenus={closeMenus} menuItems={menuItems as any} menuKeys={menuKeys as any} barHeight={MENU_BAR_HEIGHT} />
+                <MenuBar brand={BRAND} openMenu={openMenu} setOpenMenu={setOpenMenu} closeMenus={closeMenus} menuItems={menuItems as any} menuKeys={menuKeys as any} barHeight={MENU_BAR_HEIGHT} minimal={isMobile} />
               </div>
               {showCurvDebug && (
                 <div className="absolute z-[120] top-[4px] right-[6px] bg-black/60 text-[10px] leading-tight text-white font-mono px-2 py-1 rounded shadow-lg backdrop-blur" style={{width:200}}>
@@ -703,26 +761,67 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   <p className="mt-1 text-[9px] opacity-60">Alt+C toggle</p>
                 </div>
               )}
-              <div ref={iconAreaRef} className="absolute inset-x-0 bottom-0" style={{ top: MENU_BAR_HEIGHT }}>
-                {icons.map(ic=> (
-                  <DesktopIcon key={ic.id} id={ic.id} label={ic.label} x={ic.x} y={ic.y} img={ic.img} isSelected={selectedIcons.includes(ic.id)} onDoubleClick={()=>iconDbl(ic.id)} onPointerDown={(e)=>iconDown(e,ic.id)} />
-                ))}
-                <div className="pointer-events-none absolute inset-0">
-                  {trail.map(td=> {
-                    const age = Date.now()-td.created; const life = TRAIL_LIFE; const t = Math.min(1, age / life); const opacity = 1 - t; if(opacity<=0) return null; const containerW=92; const square=64; const offsetX=(containerW-square)/2; const left=td.x+offsetX; const top=td.y; const scale=1+0.05*(1-t); return (
-                      <div key={td.created+td.id+Math.random()} style={{ position:'absolute', left, top, width:square, height:square, opacity, transform:`scale(${scale})`, filter:'grayscale(1)', pointerEvents:'none', transition:'opacity 90ms linear' }}>
-                        <div className="w-full h-full bg-white ring-1 ring-black flex items-center justify-center">
-                          {td.src ? <img src={td.src} className="w-12 h-12 object-contain" draggable={false} /> : <div className="w-12 h-12 bg-black" />}
-                        </div>
-                      </div>
-                    ); })}
+              {isMobile ? (
+                <div className="absolute inset-0" style={{ top: MENU_BAR_HEIGHT }}>
+                  {/* Escritorio móvil: iconos de Proyectos y Terminal */}
+                  <div className="absolute inset-x-0" style={{ top: 10 }}>
+                    <div className="max-w-[520px] mx-auto px-4 relative" style={{ height: mobileIconBox*1.9 }}>
+                      <DesktopIcon id={'proj-mobile'} label={'Projects'} x={16} y={8} img={{src: `${base}icons/projects.png`}} isSelected={false} onDoubleClick={()=> bringToFront('projects')} onPointerDown={()=> bringToFront('projects')} boxPx={mobileIconBox} />
+                      <DesktopIcon id={'term-mobile'} label={'Terminal'} x={16 + Math.round(mobileIconBox + 20)} y={8} img={{src: `${base}icons/projects.png`}} isSelected={false} onDoubleClick={()=> bringToFront('terminal')} onPointerDown={()=> bringToFront('terminal')} boxPx={mobileIconBox} />
+                    </div>
+                  </div>
+                  {/* Dock inferior con 4 acciones */}
+                  <div className="absolute inset-x-0 bottom-3">
+                    <div className="mx-auto max-w-[520px] flex items-center justify-around gap-3 px-4 py-2">
+                      {/* Correo */}
+                      <button aria-label="Email" onClick={()=>{ window.location.href = 'mailto:jesusferdev@gmail.com'; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="Email"><MailIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      {/* About */}
+                      <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="About"><MonitorIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      {/* WhatsApp */}
+                      <button aria-label="WhatsApp" onClick={()=>{ const phone='34600111222'; const text=encodeURIComponent('¡Hola! Vengo desde tu portfolio.'); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="WhatsApp"><ChatIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      {/* Navegador/LinkedIn */}
+                      <button aria-label="LinkedIn" onClick={()=>{ window.open('https://www.linkedin.com/in/jesusferdev','_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="LinkedIn"><GlobeIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                    </div>
+                  </div>
                 </div>
-                {marquee && (()=>{ const {x1,y1,x2,y2}=marquee; const left=Math.min(x1,x2); const top=Math.min(y1,y2); const w=Math.abs(x1-x2); const h=Math.abs(y1-y2); return (
-                  <div className="absolute border border-black/70 bg-black/10" style={{ left, top, width:w, height:h, backdropFilter:'invert(1) contrast(1.2)' }} />
-                ); })()}
-              </div>
-              {wins.map(w=> (
-                <Window key={w.key} x={w.x} y={w.y} w={w.w} h={w.h} z={w.z} title={w.title} open={w.open} onClose={()=> setOpen(w.key,false)} dragProps={useDragWin(w.key)} resizeProps={useResizeWin(w.key)} growBox>
+              ) : (
+                <div ref={iconAreaRef} className="absolute inset-x-0 bottom-0" style={{ top: MENU_BAR_HEIGHT }}>
+                  {icons.map(ic=> (
+                    <DesktopIcon key={ic.id} id={ic.id} label={ic.label} x={ic.x} y={ic.y} img={ic.img} isSelected={selectedIcons.includes(ic.id)} onDoubleClick={()=>iconDbl(ic.id)} onPointerDown={(e)=>iconDown(e,ic.id)} />
+                  ))}
+                  <div className="pointer-events-none absolute inset-0">
+                    {trail.map(td=> {
+                      const age = Date.now()-td.created; const life = TRAIL_LIFE; const t = Math.min(1, age / life); const opacity = 1 - t; if(opacity<=0) return null; const containerW=92; const square=64; const offsetX=(containerW-square)/2; const left=td.x+offsetX; const top=td.y; const scale=1+0.05*(1-t); return (
+                        <div key={td.created+td.id+Math.random()} style={{ position:'absolute', left, top, width:square, height:square, opacity, transform:`scale(${scale})`, filter:'grayscale(1)', pointerEvents:'none', transition:'opacity 90ms linear' }}>
+                          <div className="w-full h-full bg-white ring-1 ring-black flex items-center justify-center">
+                            {td.src ? <img src={td.src} className="w-12 h-12 object-contain" draggable={false} /> : <div className="w-12 h-12 bg-black" />}
+                          </div>
+                        </div>
+                      ); })}
+                  </div>
+                  {marquee && (()=>{ const {x1,y1,x2,y2}=marquee; const left=Math.min(x1,x2); const top=Math.min(y1,y2); const w=Math.abs(x1-x2); const h=Math.abs(y1-y2); return (
+                    <div className="absolute border border-black/70 bg-black/10" style={{ left, top, width:w, height:h, backdropFilter:'invert(1) contrast(1.2)' }} />
+                  ); })()}
+                </div>
+              )}
+              {(isMobile
+                ? (()=>{ const openWins = wins.filter(w=>w.open); if(!openWins.length) return [] as RetroWindow[]; const top = openWins.reduce((a,b)=> a.z>b.z? a:b); return [top]; })()
+                : wins
+              ).map(w=> (
+                <Window
+                  key={w.key}
+                  x={isMobile? 12 : w.x}
+                  y={isMobile? MENU_BAR_HEIGHT + 10 : w.y}
+                  w={isMobile? Math.max(240, viewport.w - (12+12)) : w.w}
+                  h={isMobile? clamp(Math.round(viewport.h * 0.85), 200, viewport.h - MENU_BAR_HEIGHT - (10+12)) : w.h}
+                  z={w.z}
+                  title={w.title}
+                  open={w.open}
+                  onClose={()=> setOpen(w.key,false)}
+                  dragProps={isMobile? undefined : dragMap[w.key]}
+                  resizeProps={isMobile? undefined : resizeMap[w.key]}
+                  growBox={!isMobile}
+                >
                   <WindowBody
                     win={w}
                     brand={BRAND}
@@ -821,6 +920,21 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-classic [data-menu-bar] button:hover { color: #fff !important; }
             .theme-classic [data-menu-bar] button.bg-black { color: #fff !important; }
             .theme-classic [data-menu-bar] .hover\:text-white:hover { color: #fff !important; }
+          `}</style>
+          {/* Mobile window content readability tweaks */}
+          <style>{`
+            @media (max-width: 768px), (pointer: coarse) {
+              /* Card-like windows */
+              [data-window].window-main { border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.12); overflow: hidden; }
+              [data-window] .win-chrome { padding-top: 6px; padding-bottom: 6px; }
+              [data-window] .win-chrome .win-title { font-size: 13px; }
+              /* Inner content wrapper: add padding and ensure scroll feels good */
+              [data-window] .win-content > * { font-size: 13px; line-height: 1.3; }
+              [data-window] .win-content { padding: 8px; -webkit-overflow-scrolling: touch; }
+              /* About tweaks: center and tighten */
+              [data-window] .win-content img { image-rendering: auto; }
+              /* Projects mobile accordion is already mobile-friendly; no extra here */
+            }
           `}</style>
       {/* monitor debug panel removed in responsive version */}
     </div>
