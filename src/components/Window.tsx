@@ -3,15 +3,17 @@ import WindowChrome from './WindowChrome';
 
 export interface WindowProps {
 	x: number; y: number; w: number; h?: number | 'auto'; z: number; title: string; open: boolean;
-	children: React.ReactNode; onClose: () => void; dragProps?: React.HTMLAttributes<HTMLDivElement>; resizeProps?: React.HTMLAttributes<HTMLDivElement>; growBox?: boolean; style?: React.CSSProperties;
+	children: React.ReactNode; onClose: () => void; dragProps?: React.HTMLAttributes<HTMLDivElement>; resizeProps?: React.HTMLAttributes<HTMLDivElement>; growBox?: boolean; style?: React.CSSProperties; contentClassName?: string; contentStyle?: React.CSSProperties;
 }
 
-const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style }) => {
+const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style, contentClassName, contentStyle }) => {
 	if (!open) return null;
+	const baseContentClass = h==='auto'? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-hidden';
+	const contentClasses = `${baseContentClass} win-content${contentClassName ? ` ${contentClassName}` : ''}`;
 	return (
-			<div data-window className="window-main absolute bg-white border border-black shadow-lg" style={{ left:x, top:y, width:w, height: h==='auto'? undefined : h, zIndex:z, minWidth:260, minHeight:160, ...style }}>
+		<div data-window className="window-main absolute bg-white border border-black shadow-lg" style={{ left:x, top:y, width:w, height: h==='auto'? undefined : h, zIndex:z, minWidth:260, minHeight:160, ...style }}>
 			<WindowChrome title={title} onClose={onClose} dragProps={dragProps} />
-				<div className={(h==='auto'? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-hidden') + ' win-content'}>
+			<div className={contentClasses} style={contentStyle}>
 				{children}
 				{growBox && (
 					<div className="absolute right-0 bottom-0 h-6 w-6 cursor-nwse-resize" style={{ zIndex:2 }} {...resizeProps}>

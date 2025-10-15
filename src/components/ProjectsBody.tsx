@@ -19,6 +19,8 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
   const [activeTag,setActiveTag] = useState<string|null>(null);
   const [sortKey,setSortKey] = useState<'name'|'tech'|'desc'>('name');
   const [sortDir,setSortDir] = useState<1|-1>(1);
+  // Mobile accordion open state must not be declared inside conditionals
+  const [mobileOpenId, setMobileOpenId] = useState<string | null>(null);
 
   // Build tag list from tech arrays
   const allTags = useMemo(()=> Array.from(new Set(list.flatMap(p=> p.tech))).sort(), [list]);
@@ -77,13 +79,13 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
 
   if (isMobile) {
     // Accordion-based, clean mobile layout
-    const [openId, setOpenId] = useState<string | null>(null);
-    const toggleOpen = (id: string) => setOpenId(prev => prev === id ? null : id);
+    const openId = mobileOpenId;
+    const toggleOpen = (id: string) => setMobileOpenId(prev => prev === id ? null : id);
     return (
-      <div className="flex h-full w-full flex-col bg-[#f3f3f3] text-[14px]">
+    <div className="flex h-full w-full flex-col bg-[#f3f3f3] text-[16px]">
         {/* Top header button */}
-        <div className="border-b border-black bg-[#e4e4e4] p-2">
-          <button className="elementor-like px-3 py-2 border border-black bg-white hover:bg-black hover:text-white font-semibold text-[13px] tracking-tight">PROYECTOS WEB</button>
+      <div className="border-b border-black bg-[#e4e4e4] p-3 sticky top-0 z-10">
+        <button className="elementor-like px-5 py-3 border-[2px] border-black bg-white hover:bg-black hover:text-white font-semibold text-[15px] tracking-tight shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none">PROYECTOS WEB</button>
         </div>
         {/* Accordion list */}
         <div className="flex-1 overflow-auto">
@@ -91,25 +93,26 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
             {sorted.map((p) => {
               const opened = openId === p.id;
               return (
-                <li key={p.id} className="">
-                  <button onClick={() => { toggleOpen(p.id); onSelect(p); }} className="w-full flex items-center justify-between gap-2 px-3 py-3 bg-white hover:bg-black hover:text-white text-left" style={{ minHeight: 44 }}>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center w-5 h-5 border border-black bg-[#ffe48a]">
+              <li key={p.id} className="">
+                <button onClick={() => { toggleOpen(p.id); onSelect(p); }} className="w-full flex items-center justify-between gap-3 px-5 py-3.5 bg-white hover:bg-black hover:text-white text-left" style={{ minHeight: 64 }}>
+                    <div className="flex items-center gap-3">
+                      {/* caret icon to the left, like the reference */}
+                    <span className="shrink-0">{opened ? <CaretUpIcon size={20} /> : <CaretRightIcon size={20} />}</span>
+                      <span className="inline-flex items-center justify-center w-6 h-6 border border-black bg-[#ffe48a]">
                         {/* simple folder glyph */}
-                        <span className="block w-3.5 h-3.5 bg-black"></span>
+                        <span className="block w-4 h-4 bg-black"></span>
                       </span>
-                      <span className="font-semibold text-[14px]">{p.title}</span>
+                    <span className="font-semibold text-[17px]">{p.title}</span>
                     </div>
-                    {opened ? <CaretUpIcon size={16} /> : <CaretRightIcon size={16} />}
                   </button>
                   {opened && (
-                    <div className="px-3 py-2 bg-[#fafafa]">
-                      <p className="text-[13px] leading-snug mb-2">{p.short}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[12px]">{p.tech.join(' | ')}</span>
+                  <div className="px-5 py-3.5 bg-[#fafafa]">
+                    <p className="text-[15px] leading-snug mb-2">{p.short}</p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="text-[14px] tracking-tight">{p.tech.join(' | ').toUpperCase()}</span>
                         {p.url && (
-                          <a href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-3 py-1.5 border border-black bg-white hover:bg-black hover:text-white text-[12px]" style={{ minHeight: 36 }}>
-                            <GlobeIcon size={16} /> <span>Abrir</span>
+                        <a href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 px-6 py-3 border-[2px] border-black bg-white hover:bg-black hover:text-white text-[15px] font-semibold shadow-[2px_2px_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none w-full sm:w-auto" style={{ minHeight: 50 }}>
+                          <GlobeIcon size={22} /> <span>Abrir</span>
                           </a>
                         )}
                       </div>

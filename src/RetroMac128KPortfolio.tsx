@@ -44,6 +44,7 @@ const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedP
           projects={projects}
           social={{ github: 'https://github.com/JesusFerDev' }}
           brand={brand}
+          title={`${brand} Terminal`}
         />
       );
     case 'settings':
@@ -75,26 +76,39 @@ export default function RetroMac128KPortfolio(){
   const [isMobile,setIsMobile] = useState<boolean>(false);
   const [viewport,setViewport] = useState<{w:number;h:number}>(()=> ({ w: typeof window!=='undefined'? window.innerWidth: 1024, h: typeof window!=='undefined'? window.innerHeight: 768 }));
   useEffect(()=>{
-    const check = () => {
-      const mqNarrow = window.matchMedia('(max-width: 768px)').matches;
-      const mqCoarse = window.matchMedia('(pointer: coarse)').matches;
-      setIsMobile(mqNarrow || mqCoarse);
-      setViewport({ w: window.innerWidth, h: window.innerHeight });
-    };
-    check();
-    window.addEventListener('resize', check);
-    return ()=> window.removeEventListener('resize', check);
+  const route = (window.location.pathname + window.location.hash).toLowerCase();
+  const isMobileRoute = route.includes('hom-movile');
+    if (isMobileRoute) {
+      const check = () => {
+        const mqNarrow = window.matchMedia('(max-width: 768px)').matches;
+        const mqCoarse = window.matchMedia('(pointer: coarse)').matches;
+        setIsMobile(mqNarrow || mqCoarse);
+        setViewport({ w: window.innerWidth, h: window.innerHeight });
+      };
+      check();
+      window.addEventListener('resize', check);
+      return ()=> window.removeEventListener('resize', check);
+    } else {
+      // Force desktop behavior regardless of device size
+      setIsMobile(false);
+      const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+      onResize();
+      window.addEventListener('resize', onResize);
+      return ()=> window.removeEventListener('resize', onResize);
+    }
   },[]);
   // Responsive desktop icon sizing for mobile
   const mobileIconBox = useMemo(()=>{
     if(!isMobile) return 92;
-    // Prefer 2 columns for larger, more accessible touch targets on mobile
     const gap = 20;
-    const targetCols = 2; // favor bigger icons over more columns
+    const singleCol = viewport.w <= 390;
+    const targetCols = singleCol ? 1 : 2;
     const box = Math.floor((viewport.w - 32 - (targetCols-1)*gap) / targetCols);
-    return clamp(box, 100, 160);
+    const minClamp = singleCol ? 200 : 150;
+    const maxClamp = singleCol ? 380 : 260;
+    return clamp(box, minClamp, maxClamp);
   },[isMobile, viewport.w]);
-  const MENU_BAR_HEIGHT = isMobile? 56 : 32; // altura visual de la barra superior (touch-friendly en móvil)
+  const MENU_BAR_HEIGHT = isMobile? (viewport.w <= 430 ? 80 : 68) : 32; // altura visual de la barra superior (touch-friendly en móvil)
 
   // Layout base
   type WinDef = { x:number; y:number; w:number; h?:number };
@@ -765,22 +779,22 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                 <div className="absolute inset-0" style={{ top: MENU_BAR_HEIGHT }}>
                   {/* Escritorio móvil: iconos de Proyectos y Terminal */}
                   <div className="absolute inset-x-0" style={{ top: 10 }}>
-                    <div className="max-w-[520px] mx-auto px-4 relative" style={{ height: mobileIconBox*1.9 }}>
+                    <div className="max-w-[520px] mx-auto px-4 relative" style={{ height: (viewport.w<=390? mobileIconBox*3.6 : mobileIconBox*2.4) }}>
                       <DesktopIcon id={'proj-mobile'} label={'Projects'} x={16} y={8} img={{src: `${base}icons/projects.png`}} isSelected={false} onDoubleClick={()=> bringToFront('projects')} onPointerDown={()=> bringToFront('projects')} boxPx={mobileIconBox} />
-                      <DesktopIcon id={'term-mobile'} label={'Terminal'} x={16 + Math.round(mobileIconBox + 20)} y={8} img={{src: `${base}icons/projects.png`}} isSelected={false} onDoubleClick={()=> bringToFront('terminal')} onPointerDown={()=> bringToFront('terminal')} boxPx={mobileIconBox} />
+                      <DesktopIcon id={'term-mobile'} label={'Terminal'} x={(viewport.w<=390? 16 : 16 + Math.round(mobileIconBox + 20))} y={(viewport.w<=390? 8 + Math.round(mobileIconBox*1.3) : 8)} img={{src: `${base}icons/projects.png`}} isSelected={false} onDoubleClick={()=> bringToFront('terminal')} onPointerDown={()=> bringToFront('terminal')} boxPx={mobileIconBox} />
                     </div>
                   </div>
                   {/* Dock inferior con 4 acciones */}
-                  <div className="absolute inset-x-0 bottom-3">
+                  <div className="absolute inset-x-0 bottom-6">
                     <div className="mx-auto max-w-[520px] flex items-center justify-around gap-3 px-4 py-2">
                       {/* Correo */}
-                      <button aria-label="Email" onClick={()=>{ window.location.href = 'mailto:jesusferdev@gmail.com'; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="Email"><MailIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      <button aria-label="Email" onClick={()=>{ window.location.href = 'mailto:jesusferdev@gmail.com'; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.45), height: Math.round(mobileIconBox*1.45) }} title="Email"><MailIcon size={Math.round(mobileIconBox*0.74)} /></button>
                       {/* About */}
-                      <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="About"><MonitorIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.45), height: Math.round(mobileIconBox*1.45) }} title="About"><MonitorIcon size={Math.round(mobileIconBox*0.74)} /></button>
                       {/* WhatsApp */}
-                      <button aria-label="WhatsApp" onClick={()=>{ const phone='34600111222'; const text=encodeURIComponent('¡Hola! Vengo desde tu portfolio.'); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="WhatsApp"><ChatIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      <button aria-label="WhatsApp" onClick={()=>{ const phone='34600111222'; const text=encodeURIComponent('¡Hola! Vengo desde tu portfolio.'); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.45), height: Math.round(mobileIconBox*1.45) }} title="WhatsApp"><ChatIcon size={Math.round(mobileIconBox*0.74)} /></button>
                       {/* Navegador/LinkedIn */}
-                      <button aria-label="LinkedIn" onClick={()=>{ window.open('https://www.linkedin.com/in/jesusferdev','_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.05), height: Math.round(mobileIconBox*1.05) }} title="LinkedIn"><GlobeIcon size={Math.round(mobileIconBox*0.54)} /></button>
+                      <button aria-label="LinkedIn" onClick={()=>{ window.open('https://www.linkedin.com/in/jesusferdev','_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: Math.round(mobileIconBox*1.45), height: Math.round(mobileIconBox*1.45) }} title="LinkedIn"><GlobeIcon size={Math.round(mobileIconBox*0.74)} /></button>
                     </div>
                   </div>
                 </div>
@@ -813,13 +827,14 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   x={isMobile? 12 : w.x}
                   y={isMobile? MENU_BAR_HEIGHT + 10 : w.y}
                   w={isMobile? Math.max(240, viewport.w - (12+12)) : w.w}
-                  h={isMobile? clamp(Math.round(viewport.h * 0.85), 200, viewport.h - MENU_BAR_HEIGHT - (10+12)) : w.h}
+                  h={isMobile? clamp(Math.round(viewport.h * 0.92), 220, viewport.h - MENU_BAR_HEIGHT - (10+12)) : w.h}
                   z={w.z}
                   title={w.title}
                   open={w.open}
                   onClose={()=> setOpen(w.key,false)}
                   dragProps={isMobile? undefined : dragMap[w.key]}
                   resizeProps={isMobile? undefined : resizeMap[w.key]}
+                  contentClassName={w.key==='terminal'? 'terminal-body' : undefined}
                   growBox={!isMobile}
                 >
                   <WindowBody
@@ -854,6 +869,10 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
     .ss-scan{ background: linear-gradient(to bottom, rgba(160,255,160,0.06) 0%, rgba(0,0,0,0) 60%); mix-blend-mode: screen; animation: ssScan 3.2s linear infinite; opacity:0.4; }
     .ss-glow{ pointer-events:none; box-shadow: inset 0 0 140px rgba(0,255,160,0.08), inset 0 0 28px rgba(0,255,160,0.12); }
     `}</style>
+          <style>{`
+            [data-window] .win-content.terminal-body { padding: 0; background-color: #101010; }
+            [data-window] .win-content.terminal-body .retro-terminal-root { border-radius: 0; }
+          `}</style>
           {/* Theme style overrides for green-phosphor: emphasize readability */}
           <style>{`
             .theme-phosphor{ --crt-scanline-color: rgba(0,255,150,0.05); --crt-mask-color: rgba(0,255,140,0.03); }
@@ -921,21 +940,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-classic [data-menu-bar] button.bg-black { color: #fff !important; }
             .theme-classic [data-menu-bar] .hover\:text-white:hover { color: #fff !important; }
           `}</style>
-          {/* Mobile window content readability tweaks */}
-          <style>{`
-            @media (max-width: 768px), (pointer: coarse) {
-              /* Card-like windows */
-              [data-window].window-main { border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.12); overflow: hidden; }
-              [data-window] .win-chrome { padding-top: 6px; padding-bottom: 6px; }
-              [data-window] .win-chrome .win-title { font-size: 13px; }
-              /* Inner content wrapper: add padding and ensure scroll feels good */
-              [data-window] .win-content > * { font-size: 13px; line-height: 1.3; }
-              [data-window] .win-content { padding: 8px; -webkit-overflow-scrolling: touch; }
-              /* About tweaks: center and tighten */
-              [data-window] .win-content img { image-rendering: auto; }
-              /* Projects mobile accordion is already mobile-friendly; no extra here */
-            }
-          `}</style>
+          {/* Mobile XL overrides removed from desktop route to isolate them in MobileHome */}
       {/* monitor debug panel removed in responsive version */}
     </div>
   );

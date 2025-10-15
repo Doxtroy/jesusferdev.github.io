@@ -23,6 +23,7 @@ export default function RetroTerminal({
   projects?: Project[];
   social?: Record<string,string>;
   brand?: string;
+  title?: string;
 }){
   const counterRef = useRef(WELCOME.length);
   const [lines,setLines] = useState<Line[]>(()=> WELCOME.map((t,i)=>({id:i,text:t,kind:'sys'})));
@@ -155,16 +156,46 @@ export default function RetroTerminal({
   const onSubmit=async (e:React.FormEvent)=>{ e.preventDefault(); const v=input; setInput(''); await handle(v); };
 
   const isMobile = typeof window !== 'undefined' && (window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches);
-  const baseText = isMobile ? 'text-[13px]' : 'text-[12px]';
-  const pad = isMobile ? 'p-3' : 'p-2';
+  const narrow = typeof window !== 'undefined' && window.matchMedia('(max-width: 390px)').matches;
+  const baseText = isMobile ? (narrow ? 'text-[16px]' : 'text-[15px]') : 'text-[12px]';
+  const pad = isMobile ? 'p-2.5' : 'p-2';
+  const headingText = 'Terminal';
+  const showInlineChrome = isMobile;
+  const inlineClose = onRequestClose && showInlineChrome;
   return (
-    <div className={`w-full h-full bg-[#111] text-green-400 font-mono ${baseText} flex flex-col`}>
+    <div
+      className={`retro-terminal-root w-full h-full bg-[#111] text-green-400 font-mono ${baseText} flex flex-col`}
+      aria-label={headingText}
+      role="application"
+    >
+      {showInlineChrome && (
+        <div className="terminal-inline-chrome flex items-center gap-2 border-b border-black bg-[#dcdcdc] px-3 py-2 text-[13px] font-semibold tracking-tight text-black">
+          {inlineClose ? (
+            <button
+              type="button"
+              onClick={onRequestClose}
+              className="grid h-6 w-6 place-items-center border border-black bg-black text-[11px] leading-none font-bold text-white"
+              aria-label="Cerrar terminal"
+              style={{ color: 'white' }}
+            >
+              X
+            </button>
+          ) : (
+            <div className="h-6 w-6" aria-hidden />
+          )}
+          <div className="relative flex-1 text-center">
+            <span className="inline-block bg-[#dcdcdc] px-2 win-title">{headingText}</span>
+            <div className="pointer-events-none absolute inset-x-2 top-1/2 -z-10 h-px -translate-y-1/2 bg-black/70" />
+          </div>
+          <div className="w-6" aria-hidden />
+        </div>
+      )}
       <div ref={viewRef} className={`flex-1 overflow-auto ${pad} space-y-[2px]`}>
         {lines.map(l=> <div key={l.id} className={l.kind==='cmd'?'text-green-200': l.kind==='err'?'text-red-400':'text-green-400'}>{l.text}</div>)}
       </div>
       <form onSubmit={onSubmit} className="flex border-t border-green-700">
-        <span className={`px-2 ${isMobile? 'py-2' : 'py-1'}`}>$</span>
-        <input autoFocus value={input} onChange={e=> setInput(e.target.value)} className={`flex-1 bg-[#111] text-green-300 outline-none px-0 ${isMobile? 'py-2 text-[13px]' : 'py-1'}`} />
+        <span className={`px-2 ${isMobile? 'py-2.5' : 'py-1'}`}>$</span>
+        <input autoFocus value={input} onChange={e=> setInput(e.target.value)} className={`flex-1 bg-[#111] text-green-300 outline-none px-0 ${isMobile? 'py-2.5 text-[16px]' : 'py-1'}`} />
       </form>
     </div>
   );

@@ -41,9 +41,10 @@ const MenuBar: React.FC<MenuBarProps> = ({
 	},[closeMenus]);
 
 		const h = barHeight;
-		// If bar is larger (e.g., on mobile), scale font slightly up for legibility
-		const effectiveFont = Math.max(fontSizePx, Math.round(h * 0.36));
-  const padX = Math.round(h * horizontalPaddingRatio); // padding proporcional
+		// If bar is larger (e.g., on mobile), scale font slightly up for legibility (lighter on minimal mode)
+		const scaleFactor = minimal ? 0.34 : 0.44;
+		const effectiveFont = Math.max(fontSizePx, Math.round(h * scaleFactor));
+  const padX = Math.round(h * (horizontalPaddingRatio + (minimal ? 0.06 : 0))); // padding proporcional, un poco más en modo minimal
 	return (
 		<div
         ref={barRef}
