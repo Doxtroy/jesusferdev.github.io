@@ -76,26 +76,12 @@ export default function RetroMac128KPortfolio(){
   const [isMobile,setIsMobile] = useState<boolean>(false);
   const [viewport,setViewport] = useState<{w:number;h:number}>(()=> ({ w: typeof window!=='undefined'? window.innerWidth: 1024, h: typeof window!=='undefined'? window.innerHeight: 768 }));
   useEffect(()=>{
-  const route = (window.location.pathname + window.location.hash).toLowerCase();
-  const isMobileRoute = route.includes('hom-movile');
-    if (isMobileRoute) {
-      const check = () => {
-        const mqNarrow = window.matchMedia('(max-width: 768px)').matches;
-        const mqCoarse = window.matchMedia('(pointer: coarse)').matches;
-        setIsMobile(mqNarrow || mqCoarse);
-        setViewport({ w: window.innerWidth, h: window.innerHeight });
-      };
-      check();
-      window.addEventListener('resize', check);
-      return ()=> window.removeEventListener('resize', check);
-    } else {
-      // Force desktop behavior regardless of device size
-      setIsMobile(false);
-      const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
-      onResize();
-      window.addEventListener('resize', onResize);
-      return ()=> window.removeEventListener('resize', onResize);
-    }
+    if (typeof window === 'undefined') return;
+    setIsMobile(false);
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    onResize();
+    window.addEventListener('resize', onResize);
+    return ()=> window.removeEventListener('resize', onResize);
   },[]);
   // Responsive desktop icon sizing for mobile
   const mobileIconBox = useMemo(()=>{
