@@ -248,7 +248,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             {isMobile && (
               <div className="absolute inset-0" style={{ top: MENU_BAR_HEIGHT, paddingBottom: SAFE_BOTTOM }}>
                 <div className="absolute inset-x-0" style={{ top: 10 }}>
-                  <div className="max-w-[520px] mx-auto px-4 relative" style={{ height: (viewport.w<=390? mobileIconBox*2.7 : mobileIconBox*1.9) }}>
+                  <div className="max-w-[520px] mx-auto px-4 relative" style={{ height: (viewport.w<=390? mobileIconBox*3.8 : mobileIconBox*2.9) }}>
                     <DesktopIcon
                       id={'proj-mobile'}
                       label={'Projects'}
@@ -271,11 +271,22 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                       onPointerDown={()=> bringToFront('terminal')}
                       boxPx={mobileIconBox}
                     />
+                    <DesktopIcon
+                      id={'settings-mobile'}
+                      label={'Settings'}
+                      x={(viewport.w<=390? 16 : 16)}
+                      y={(viewport.w<=390? 8 + Math.round(mobileIconBox*2.08) : 8 + Math.round(mobileIconBox*1.04))}
+                      img={{ src: `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><path fill='black' d='M10.325 4.317a1 1 0 0 1 .99-.142l.83.332a1 1 0 0 0 .71 0l.83-.332a1 1 0 0 1 1.314.57l.342.86a1 1 0 0 0 .54.553l.86.342a1 1 0 0 1 .57 1.314l-.332.83a1 1 0 0 0 0 .71l.332.83a1 1 0 0 1-.57 1.314l-.86.342a1 1 0 0 0-.54.553l-.342.86a1 1 0 0 1-1.314.57l-.83-.332a1 1 0 0 0-.71 0l-.83.332a1 1 0 0 1-1.314-.57l-.342-.86a1 1 0 0 0-.54-.553l-.86-.342a1 1 0 0 1-.57-1.314l.332-.83a1 1 0 0 0 0-.71l-.332-.83a1 1 0 0 1 .57-1.314l.86-.342a1 1 0 0 0 .54-.553l.342-.86ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'/></svg>`)}` }}
+                      isSelected={false}
+                      onDoubleClick={()=> bringToFront('settings')}
+                      onPointerDown={()=> bringToFront('settings')}
+                      boxPx={mobileIconBox}
+                    />
                   </div>
                 </div>
                 <div className="absolute inset-x-0" style={{ bottom: 'max(6px, env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto max-w-[520px] flex items-center justify-around gap-3 px-4 py-2" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-                    {(()=>{ const small = viewport.w <= 480; const btn = small ? 96 : Math.round(mobileIconBox*1.1); const icon = small ? 46 : Math.round(mobileIconBox*0.6); return (
+                    {(()=>{ const small = viewport.w <= 480; const btn = small ? 88 : Math.round(mobileIconBox*1.0); const icon = small ? 42 : Math.round(mobileIconBox*0.56); return (
                       <>
                         <button aria-label="Email" onClick={()=>{ window.location.href = 'mailto:jesusferdev@gmail.com'; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="Email"><MailIcon size={icon} /></button>
                         <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="About"><MonitorIcon size={icon} /></button>
@@ -314,7 +325,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   onClose={()=> setOpen(w.key,false)}
                   dragProps={isMobile? undefined : (dragMap as any)[w.key]}
                   resizeProps={isMobile? undefined : (resizeMap as any)[w.key]}
-                  contentClassName={w.key==='terminal'? 'terminal-body' : undefined}
+                  contentClassName={w.key==='terminal' ? 'terminal-body' : (w.key==='projects' ? 'projects-body' : undefined)}
                   growBox={!isMobile}
                 >
                   {w.key==='about' && <AboutBody brand={BRAND} />}
@@ -335,10 +346,63 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
         </div>
       </div>
       <style>{`
+        /* Base theme variables */
         .theme-phosphor{ --crt-scanline-color: rgba(0,255,150,0.05); --crt-mask-color: rgba(0,255,140,0.03); }
         .theme-phosphor * { text-shadow: 0 0 0.6px rgba(160,255,160,0.28); }
         .theme-amber{ --crt-scanline-color: rgba(255,170,60,0.05); --crt-mask-color: rgba(255,200,120,0.03); }
         .theme-amber * { text-shadow: 0 0 0.6px rgba(255,220,150,0.22); }
+
+        /* Phosphor readability (mobile) */
+        .theme-phosphor [data-menu-bar] > div{ background-color: rgba(0,28,0,0.72) !important; border-color: rgba(0,255,160,0.28) !important; color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor [data-menu-bar] .border{ border-color: rgba(0,255,160,0.28) !important; }
+        .theme-phosphor [data-menu-bar] .bg-white{ background-color: rgba(0,22,0,0.86) !important; }
+        .theme-phosphor [data-menu-bar] button{ color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor [data-menu-bar] .hover\:bg-black:hover{ background-color: rgba(0,80,0,0.6) !important; }
+        .theme-phosphor [data-menu-bar] .hover\:text-white:hover{ color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor [data-window].window-main{ background-color: rgba(0,22,0,0.62) !important; border-color: rgba(0,255,160,0.26) !important; color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor [data-window] .border-black{ border-color: rgba(0,255,160,0.26) !important; }
+        .theme-phosphor [data-window] .bg-white{ background-color: rgba(0,24,0,0.5) !important; }
+        .theme-phosphor [data-window] .win-chrome .win-title{ color: #041404 !important; text-shadow: none !important; }
+        .theme-phosphor [data-icon] .bg-white{ background-color: rgba(0,28,0,0.55) !important; }
+        .theme-phosphor [data-icon] .ring-black{ box-shadow: inset 0 0 0 1px rgba(0,255,128,0.22) !important; }
+        .theme-phosphor [data-icon] span{ background-color: rgba(0,24,0,0.66) !important; color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor .text-black, .theme-phosphor .text-white, .theme-phosphor [class*='text-black/'], .theme-phosphor [class*='text-white/']{ color: var(--screen-fg,#b5ffb5) !important; }
+        .theme-phosphor input, .theme-phosphor textarea, .theme-phosphor select{ background-color: rgba(0,24,0,0.62) !important; border-color: rgba(0,255,160,0.26) !important; color: var(--screen-fg,#b5ffb5) !important; }
+
+  /* Projects window (mobile) */
+  .theme-phosphor [data-window] .projects-body{ background-color: rgba(0,24,0,0.52) !important; color: var(--screen-fg,#b5ffb5) !important; }
+  .theme-phosphor [data-window] .projects-body .border-black{ border-color: rgba(0,255,160,0.26) !important; }
+  .theme-phosphor [data-window] .projects-body .bg-white,
+  .theme-phosphor [data-window] .projects-body [class*="bg-[#"]{ background-color: rgba(0,24,0,0.5) !important; }
+  .theme-phosphor [data-window] .projects-body .hover\:bg-black:hover,
+  .theme-phosphor [data-window] .projects-body li:hover,
+  .theme-phosphor [data-window] .projects-body button:hover{ background-color: rgba(0,80,0,0.55) !important; color: var(--screen-fg,#b5ffb5) !important; }
+
+        /* Amber readability (mobile) */
+        .theme-amber [data-menu-bar] > div{ background-color: rgba(40,24,0,0.72) !important; border-color: rgba(255,200,120,0.28) !important; color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber [data-menu-bar] .border{ border-color: rgba(255,200,120,0.28) !important; }
+        .theme-amber [data-menu-bar] .bg-white{ background-color: rgba(30,18,0,0.86) !important; }
+        .theme-amber [data-menu-bar] button{ color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber [data-menu-bar] .hover\:bg-black:hover{ background-color: rgba(90,60,0,0.6) !important; }
+        .theme-amber [data-menu-bar] .hover\:text-white:hover{ color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber [data-window].window-main{ background-color: rgba(28,18,0,0.62) !important; border-color: rgba(255,200,120,0.26) !important; color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber [data-window] .border-black{ border-color: rgba(255,200,120,0.26) !important; }
+        .theme-amber [data-window] .bg-white{ background-color: rgba(24,16,0,0.5) !important; }
+        .theme-amber [data-window] .win-chrome .win-title{ color: #1a1200 !important; text-shadow: none !important; }
+        .theme-amber [data-icon] .bg-white{ background-color: rgba(40,28,0,0.55) !important; }
+        .theme-amber [data-icon] .ring-black{ box-shadow: inset 0 0 0 1px rgba(255,200,120,0.22) !important; }
+        .theme-amber [data-icon] span{ background-color: rgba(30,20,0,0.66) !important; color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber .text-black, .theme-amber .text-white, .theme-amber [class*='text-black/'], .theme-amber [class*='text-white/']{ color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber input, .theme-amber textarea, .theme-amber select{ background-color: rgba(26,18,0,0.62) !important; border-color: rgba(255,200,120,0.26) !important; color: var(--screen-fg,#ffd89a) !important; }
+
+        /* Projects window (mobile) */
+        .theme-amber [data-window] .projects-body{ background-color: rgba(26,18,0,0.52) !important; color: var(--screen-fg,#ffd89a) !important; }
+        .theme-amber [data-window] .projects-body .border-black{ border-color: rgba(255,200,120,0.26) !important; }
+        .theme-amber [data-window] .projects-body .bg-white,
+        .theme-amber [data-window] .projects-body [class*="bg-[#"]{ background-color: rgba(26,18,0,0.5) !important; }
+        .theme-amber [data-window] .projects-body .hover\:bg-black:hover,
+        .theme-amber [data-window] .projects-body li:hover,
+        .theme-amber [data-window] .projects-body button:hover{ background-color: rgba(90,60,0,0.55) !important; color: var(--screen-fg,#ffd89a) !important; }
       `}</style>
       <style>{`
         @media (max-width: 768px), (pointer: coarse) {

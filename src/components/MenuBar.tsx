@@ -42,7 +42,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
 
 		const h = barHeight;
 		// If bar is larger (e.g., on mobile), scale font slightly up for legibility (lighter on minimal mode)
-		const scaleFactor = minimal ? 0.34 : 0.44;
+		const scaleFactor = minimal ? 0.30 : 0.40;
 		const effectiveFont = Math.max(fontSizePx, Math.round(h * scaleFactor));
   const padX = Math.round(h * (horizontalPaddingRatio + (minimal ? 0.06 : 0))); // padding proporcional, un poco más en modo minimal
 	return (
@@ -91,7 +91,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
 				<div className="flex items-center gap-2 opacity-80" style={{lineHeight:h+'px', paddingRight: '8px'}}>
 					<WifiIcon size={Math.round(h*0.5)} />
 					<BatteryIcon size={Math.round(h*0.5)} />
-					<span className="tabular-nums tracking-tight">{clock.toLocaleTimeString(undefined,{hour:'numeric',minute:'numeric', hour12:true})}</span>
+					<span className="tabular-nums tracking-tight">{clock.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</span>
 				</div>
 			) : (
 				<div className="tabular-nums opacity-70 tracking-tight" style={{lineHeight:h+'px', paddingRight: '80px'}}>{clock.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div>

@@ -820,7 +820,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   onClose={()=> setOpen(w.key,false)}
                   dragProps={isMobile? undefined : dragMap[w.key]}
                   resizeProps={isMobile? undefined : resizeMap[w.key]}
-                  contentClassName={w.key==='terminal'? 'terminal-body' : undefined}
+                  contentClassName={w.key==='terminal' ? 'terminal-body' : (w.key==='projects' ? 'projects-body' : undefined)}
                   growBox={!isMobile}
                 >
                   <WindowBody
@@ -890,6 +890,15 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             /* Inputs */
             .theme-phosphor input, .theme-phosphor textarea, .theme-phosphor select{ background-color: rgba(0,24,0,0.62) !important; border-color: rgba(0,255,160,0.26) !important; color: var(--screen-fg,#b5ffb5) !important; }
 
+            /* Projects window */
+            .theme-phosphor [data-window] .projects-body{ background-color: rgba(0,24,0,0.52) !important; color: var(--screen-fg,#b5ffb5) !important; }
+            .theme-phosphor [data-window] .projects-body .border-black{ border-color: rgba(0,255,160,0.26) !important; }
+            .theme-phosphor [data-window] .projects-body .bg-white,
+            .theme-phosphor [data-window] .projects-body [class*="bg-[#"]{ background-color: rgba(0,24,0,0.5) !important; }
+            .theme-phosphor [data-window] .projects-body .hover\:bg-black:hover,
+            .theme-phosphor [data-window] .projects-body li:hover,
+            .theme-phosphor [data-window] .projects-body button:hover{ background-color: rgba(0,80,0,0.55) !important; color: var(--screen-fg,#b5ffb5) !important; }
+
             /* Amber theme (retro amber monochrome) */
             .theme-amber{ --crt-scanline-color: rgba(255,170,60,0.05); --crt-mask-color: rgba(255,200,120,0.03); }
             .theme-amber{ -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -919,6 +928,15 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-amber .text-black, .theme-amber .text-white, .theme-amber [class*='text-black/'], .theme-amber [class*='text-white/']{ color: var(--screen-fg,#ffd89a) !important; }
             /* Inputs */
             .theme-amber input, .theme-amber textarea, .theme-amber select{ background-color: rgba(26,18,0,0.62) !important; border-color: rgba(255,200,120,0.26) !important; color: var(--screen-fg,#ffd89a) !important; }
+
+            /* Projects window */
+            .theme-amber [data-window] .projects-body{ background-color: rgba(26,18,0,0.52) !important; color: var(--screen-fg,#ffd89a) !important; }
+            .theme-amber [data-window] .projects-body .border-black{ border-color: rgba(255,200,120,0.26) !important; }
+            .theme-amber [data-window] .projects-body .bg-white,
+            .theme-amber [data-window] .projects-body [class*="bg-[#"]{ background-color: rgba(26,18,0,0.5) !important; }
+            .theme-amber [data-window] .projects-body .hover\:bg-black:hover,
+            .theme-amber [data-window] .projects-body li:hover,
+            .theme-amber [data-window] .projects-body button:hover{ background-color: rgba(90,60,0,0.55) !important; color: var(--screen-fg,#ffd89a) !important; }
 
             /* Classic theme: ensure menu hover text is legible (white on black) */
             .theme-classic [data-menu-bar] button { color: #111 !important; }
