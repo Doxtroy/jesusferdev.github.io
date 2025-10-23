@@ -1,4 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * RetroMac128KPortfolio (desktop UI)
+ *
+ * Customization hotspots:
+ * - BRAND: personal display name shown in the menu bar and terminal title.
+ * - projects: add/remove/modify your portfolio entries.
+ * - Socials: LINKS passed to SocialBody and also to Terminal (for quick shortcuts).
+ * - Contact buttons (mobile-only section in this file is rarely used): update email/phone/links if you plan to enable mobile here too.
+ * - About: reads details from central ABOUT config (images auto-prefixed with base path).
+ */
 import { MailIcon, MonitorIcon, ChatIcon, GlobeIcon } from './components/icons/RetroIcons';
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
@@ -8,6 +18,8 @@ import DesktopIcon from './components/DesktopIcon';
 import MenuBar from './components/MenuBar';
 import RetroTerminal from './components/RetroTerminal';
 import SettingsBody from './components/SettingsBody.tsx';
+// Centralized personalization
+import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, ABOUT as ABOUT_CFG } from './config/personalize';
 
 // Types
 type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings';
@@ -27,14 +39,31 @@ interface WindowBodyProps {
   onThemeChange: (t: Theme) => void;
   screensaverMs: number;
   onScreensaverMsChange: (n: number) => void;
+  base: string;
 }
 
-const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange }) => {
+const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange, base }) => {
   switch (win.key) {
     case 'about':
-      return <AboutBody brand={brand} />;
+      {
+        const withBase = (img?: string) => {
+          if (!img) return img;
+          if (/^https?:\/\//.test(img)) return img;
+          if (img.startsWith('/')) return `${base}${img.slice(1)}`;
+          return `${base}${img}`;
+        };
+        const aboutProps = {
+          ...ABOUT_CFG,
+          brand,
+          pcImage: withBase(ABOUT_CFG.pcImage),
+          skills: Array.isArray(ABOUT_CFG.skills)
+            ? ABOUT_CFG.skills.map(s => ({ ...s, src: withBase(s.src) as string }))
+            : ABOUT_CFG.skills
+        } as any;
+        return <AboutBody {...aboutProps} />;
+      }
     case 'social':
-      return <SocialBody LINKS={{ github: 'https://github.com/JesusFerDev' }} />;
+      return <SocialBody LINKS={SOCIAL_LINKS} />;
     case 'projects':
       return <ProjectsBody list={projects} selected={selectedProject} onSelect={onSelectProject} />;
     case 'terminal':
@@ -42,7 +71,7 @@ const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedP
         <RetroTerminal
           onRequestClose={() => onCloseKey('terminal')}
           projects={projects}
-          social={{ github: 'https://github.com/JesusFerDev' }}
+          social={Object.fromEntries(Object.entries(SOCIAL_LINKS).filter(([,v])=> !!v)) as Record<string,string>}
           brand={brand}
           title={`${brand} Terminal`}
         />
@@ -69,7 +98,8 @@ const loadIcons = ():DesktopIconType[]|null => { try { const raw=localStorage.ge
 const saveIcons = (icons:DesktopIconType[]) => { try { localStorage.setItem('retro-icons', JSON.stringify(icons)); } catch {} };
 
 export default function RetroMac128KPortfolio(){
-  const BRAND='JesusFerDev';
+  // PERSONAL: Display brand/name from central config
+  const BRAND = BRAND_CFG;
   const screenRef = useRef<HTMLDivElement>(null);
   const [maxZ,setMaxZ] = useState(10);
   // Mobile detection
@@ -299,11 +329,18 @@ export default function RetroMac128KPortfolio(){
   };
 
   // Projects data
-  const projects:Project[]=[
-    { id:'ucm',      title:'Máster UCM', short:'Liderando el Futuro Sostenible', image:`${base}icons/projects.png`,      tech:['WordPress','JavaScript','PHP'] },
-    { id:'coduck',   title:'Coduck',     short:'Plataforma de formación',       image:`${base}icons/projects.png`,   tech:['React','Node','PostgreSQL'] },
-    { id:'madmusic', title:'MadMusic',   short:'Tienda de instrumentos',        image:`${base}icons/projects.png`, tech:['Next.js','Stripe'] }
-  ];
+  /**
+   * PERSONAL: Projects list for Projects window (desktop route)
+   * See comments in MobileHome for field explanations.
+   */
+  const projects:Project[] = React.useMemo(()=>{
+    const withBase = (img:string) => {
+      if(/^https?:\/\//.test(img)) return img;
+      if(img.startsWith('/')) return `${base}${img.slice(1)}`;
+      return `${base}${img}`;
+    };
+    return PROJECTS_CFG.map(p=> ({ ...p, image: withBase(p.image) }));
+  },[base]);
   const [selectedProject,setSelectedProject] = useState<Project|null>(projects[0]);
 
   // ====== Restart (Reboot) logic ======
@@ -374,6 +411,30 @@ export default function RetroMac128KPortfolio(){
   </svg>`);
   const cursorGrabbing = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
     <path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='black'/>
+  </svg>`);
+  // High-contrast (light) cursor variants for dark themes
+  const cursorPointerLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M1 1 L12 8 L8 9 L9 13 L7 14 L6 10 L2 12 Z' fill='white' stroke='black' stroke-width='0.8'/>
+  </svg>`);
+  const cursorPointerHoverLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M1 1 L12 8 L8 9 L9 13 L7 14 L6 10 L2 12 Z' fill='white' stroke='black' stroke-width='0.8'/>
+    <rect x='9' y='9' width='3' height='3' fill='black' stroke='white' stroke-width='0.5'/>
+  </svg>`);
+  const cursorTextLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <rect x='7' y='2' width='2' height='12' fill='white' stroke='black' stroke-width='0.8'/>
+    <rect x='4' y='6' width='8' height='2' fill='white' stroke='black' stroke-width='0.8'/>
+  </svg>`);
+  const cursorResizeNWSELight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M2 14 L14 2 M5 14H2v-3 M14 5V2h-3' stroke='white' stroke-width='2' />
+  </svg>`);
+  const cursorResizeNESWLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M2 2 L14 14 M11 2h3v3 M2 11v3h3' stroke='white' stroke-width='2' />
+  </svg>`);
+  const cursorGrabLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M5 14h6l2-5-1-4-2-1-1 3V5H8v2L7 4 5 5l1 5-2 1z' fill='white' stroke='black' stroke-width='0.6'/>
+  </svg>`);
+  const cursorGrabbingLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'>
+    <path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='white' stroke='black' stroke-width='0.6'/>
   </svg>`);
 
   // (WindowBody moved to module scope to avoid remounting children)
@@ -635,9 +696,9 @@ export default function RetroMac128KPortfolio(){
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[#2a2a2a]">
-      <style>{`html,body,#root{font-family:ui-monospace,Menlo,Monaco,'Courier New',monospace}
+  <style>{`html,body,#root{font-family:ui-monospace,Menlo,Monaco,'Courier New',monospace}
 /* Base clickable */
-button,[role=button],a,.cursor-pointer,.crt-wrapper,.crt-wrapper *,[data-icon]{cursor:url("data:image/svg+xml,${cursorPointer}") 1 1,pointer!important}
+button,[role=button],a,.cursor-pointer,[data-icon]{cursor:url("data:image/svg+xml,${cursorPointer}") 1 1,pointer!important}
 button:not(:disabled):hover,a:hover,[role=button]:hover,.cursor-pointer:hover,[data-icon]:hover,.clickable-hover:hover,.menu-item:hover{cursor:url("data:image/svg+xml,${cursorPointerHover}") 1 1,pointer!important}
 /* Texto */
 input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/svg+xml,${cursorText}") 7 7,text!important}
@@ -694,7 +755,8 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
           style={{
             // theme applied here via CSS variables
             ['--screen-bg' as any]: theme==='phosphor'? '#071a07' : theme==='amber'? '#140c00' : '#f2f2f2',
-            ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111'
+            ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111',
+            cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default`
           }}
           onPointerMove={(e:React.PointerEvent)=>{iconMove(e); onBackgroundPointerMove(e);}}
           onPointerUp={(e:React.PointerEvent)=>{iconUp(e); onBackgroundPointerUp();}}
@@ -820,9 +882,11 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   onClose={()=> setOpen(w.key,false)}
                   dragProps={isMobile? undefined : dragMap[w.key]}
                   resizeProps={isMobile? undefined : resizeMap[w.key]}
-                  contentClassName={w.key==='terminal' ? 'terminal-body' : (w.key==='projects' ? 'projects-body' : undefined)}
+                  contentClassName={w.key==='terminal' ? 'terminal-body overflow-hidden' : (w.key==='projects' ? 'projects-body' : undefined)}
                   growBox={!isMobile}
                 >
+                  {/* PERSONAL: About/Socials/Terminal customization happens through props here */}
+                  {/* PERSONAL: About/Socials/Terminal customization happens through props here */}
                   <WindowBody
                     win={w}
                     brand={BRAND}
@@ -834,17 +898,18 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                     onThemeChange={setTheme}
                     screensaverMs={screensaverMs}
                     onScreensaverMsChange={setScreensaverMs}
+                    base={base}
                   />
                 </Window>
               ))}
-              <div className="crt-barrel-overlay" />
-              <div className="crt-barrel-specular" />
+              <div className="crt-barrel-overlay" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+                <div className="crt-barrel-specular" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
             </div>
             {/* CRT overlays */}
-            <div className="crt-vignette" />
-            <div className="crt-inner-bezel" />
-            <div className="crt-phosphor" />
-            <div className="crt-distort" />
+            <div className="crt-vignette" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+            <div className="crt-inner-bezel" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+            <div className="crt-phosphor" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+            <div className="crt-distort" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
           </div>
         </div>
     {/* Screensaver styles */}
@@ -899,6 +964,36 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-phosphor [data-window] .projects-body li:hover,
             .theme-phosphor [data-window] .projects-body button:hover{ background-color: rgba(0,80,0,0.55) !important; color: var(--screen-fg,#b5ffb5) !important; }
 
+            /* High-contrast cursors for dark phosphor theme */
+            .theme-phosphor.crt-wrapper,
+            .theme-phosphor.crt-wrapper *,
+            .theme-phosphor button,
+            .theme-phosphor [role=button],
+            .theme-phosphor a,
+            .theme-phosphor .cursor-pointer,
+            .theme-phosphor.crt-wrapper,
+            .theme-phosphor .crt-wrapper,
+            .theme-phosphor .crt-wrapper *,
+            .theme-phosphor [data-icon]{ cursor:url("data:image/svg+xml,${cursorPointerLight}") 1 1, pointer !important; }
+            .theme-phosphor button:not(:disabled):hover,
+            .theme-phosphor a:hover,
+            .theme-phosphor [role=button]:hover,
+            .theme-phosphor .cursor-pointer:hover,
+            .theme-phosphor.crt-wrapper:hover,
+            .theme-phosphor.crt-wrapper:hover,
+            .theme-phosphor .crt-wrapper:hover,
+            .theme-phosphor [data-icon]:hover,
+            .theme-phosphor .clickable-hover:hover,
+            .theme-phosphor .menu-item:hover{ cursor:url("data:image/svg+xml,${cursorPointerHoverLight}") 1 1, pointer !important; }
+            .theme-phosphor input[type=text],
+            .theme-phosphor textarea,
+            .theme-phosphor .text-input,
+            .theme-phosphor .selectable-text{ cursor:url("data:image/svg+xml,${cursorTextLight}") 7 7, text !important; }
+            .theme-phosphor .cursor-grab{ cursor:url("data:image/svg+xml,${cursorGrabLight}") 1 1, grab !important; }
+            .theme-phosphor .cursor-grabbing{ cursor:url("data:image/svg+xml,${cursorGrabbingLight}") 1 1, grabbing !important; }
+            .theme-phosphor .cursor-nwse-resize{ cursor:url("data:image/svg+xml,${cursorResizeNWSELight}") 7 7, nwse-resize !important; }
+            .theme-phosphor .cursor-nesw-resize{ cursor:url("data:image/svg+xml,${cursorResizeNESWLight}") 7 7, nesw-resize !important; }
+
             /* Amber theme (retro amber monochrome) */
             .theme-amber{ --crt-scanline-color: rgba(255,170,60,0.05); --crt-mask-color: rgba(255,200,120,0.03); }
             .theme-amber{ -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -937,6 +1032,36 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
             .theme-amber [data-window] .projects-body .hover\:bg-black:hover,
             .theme-amber [data-window] .projects-body li:hover,
             .theme-amber [data-window] .projects-body button:hover{ background-color: rgba(90,60,0,0.55) !important; color: var(--screen-fg,#ffd89a) !important; }
+
+            /* High-contrast cursors for dark amber theme */
+            .theme-amber.crt-wrapper,
+            .theme-amber.crt-wrapper *,
+            .theme-amber button,
+            .theme-amber [role=button],
+            .theme-amber a,
+            .theme-amber .cursor-pointer,
+            .theme-amber.crt-wrapper,
+            .theme-amber .crt-wrapper,
+            .theme-amber .crt-wrapper *,
+            .theme-amber [data-icon]{ cursor:url("data:image/svg+xml,${cursorPointerLight}") 1 1, pointer !important; }
+            .theme-amber button:not(:disabled):hover,
+            .theme-amber a:hover,
+            .theme-amber [role=button]:hover,
+            .theme-amber .cursor-pointer:hover,
+            .theme-amber.crt-wrapper:hover,
+            .theme-amber.crt-wrapper:hover,
+            .theme-amber .crt-wrapper:hover,
+            .theme-amber [data-icon]:hover,
+            .theme-amber .clickable-hover:hover,
+            .theme-amber .menu-item:hover{ cursor:url("data:image/svg+xml,${cursorPointerHoverLight}") 1 1, pointer !important; }
+            .theme-amber input[type=text],
+            .theme-amber textarea,
+            .theme-amber .text-input,
+            .theme-amber .selectable-text{ cursor:url("data:image/svg+xml,${cursorTextLight}") 7 7, text !important; }
+            .theme-amber .cursor-grab{ cursor:url("data:image/svg+xml,${cursorGrabLight}") 1 1, grab !important; }
+            .theme-amber .cursor-grabbing{ cursor:url("data:image/svg+xml,${cursorGrabbingLight}") 1 1, grabbing !important; }
+            .theme-amber .cursor-nwse-resize{ cursor:url("data:image/svg+xml,${cursorResizeNWSELight}") 7 7, nwse-resize !important; }
+            .theme-amber .cursor-nesw-resize{ cursor:url("data:image/svg+xml,${cursorResizeNESWLight}") 7 7, nesw-resize !important; }
 
             /* Classic theme: ensure menu hover text is legible (white on black) */
             .theme-classic [data-menu-bar] button { color: #111 !important; }

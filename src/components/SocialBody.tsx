@@ -1,4 +1,16 @@
 import React from 'react';
+/**
+ * SocialBody
+ *
+ * Pass your social links via the LINKS prop. Only provided keys are rendered.
+ * Examples:
+ * - github: 'https://github.com/youruser'
+ * - linkedin: 'https://www.linkedin.com/in/youruser/'
+ * - instagram: 'https://instagram.com/youruser'
+ * - whatsapp: 'https://wa.me/34600111222?text=Hola%20desde%20tu%20portfolio'
+ * - spotify: 'https://open.spotify.com/user/...' 
+ * - email: 'mailto:you@example.com' (or a contact page URL)
+ */
 
 export interface SocialLinks {
 	github?: string; linkedin?: string; instagram?: string; whatsapp?: string; spotify?: string; email?: string;

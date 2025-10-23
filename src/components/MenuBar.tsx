@@ -1,4 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
+/**
+ * MenuBar
+ * Props:
+ * - brand: left label (double click reloads)
+ * - openMenu/setOpenMenu/closeMenus: control current dropdown
+ * - menuItems/menuKeys: menu sections and items
+ * - barHeight/fontSizePx/horizontalPaddingRatio: sizing knobs
+ * - minimal: compact layout for mobile (shows brand + status icons + clock, no menus)
+ */
 import { WifiIcon, BatteryIcon } from './icons/RetroIcons';
 
 interface MenuItem { label: string; action?: () => void; disabled?: boolean }

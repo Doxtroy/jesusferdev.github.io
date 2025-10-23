@@ -1,4 +1,19 @@
 import React from 'react';
+/**
+ * AboutBody
+ *
+ * You can personalize About by:
+ * - Passing props from parents (e.g., brand) in `MobileHome.tsx` or `RetroMac128KPortfolio.tsx`.
+ * - Or editing the default texts and images below.
+ *
+ * Props:
+ * - brand: main title (also used elsewhere as BRAND)
+ * - version, processor, abilities, experience, creativity: free-form strings
+ * - memoryLabelLeft, memoryLabelRight: text over the memory bar
+ * - cvUrl: link to your CV / resume PDF
+ * - skills: array of icons (src, alt)
+ * - pcImage: image at the top
+ */
 
 interface SpecRow { label:string; value:React.ReactNode }
 interface SkillIcon { src:string; alt:string }
@@ -16,6 +31,7 @@ interface AboutBodyProps {
 	pcImage?: string;
 }
 
+// PERSONAL: Replace or extend these default skill icons (or pass `skills` prop from parent)
 const defaultSkills: SkillIcon[] = [
 	{ src:'https://rafaheras.dev/wp-content/uploads/2024/06/JavaScript-logo.png', alt:'JavaScript' },
 	{ src:'https://rafaheras.dev/wp-content/uploads/2024/06/Php-logo.png', alt:'PHP' },

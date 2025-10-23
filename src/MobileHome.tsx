@@ -1,4 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * MobileHome (mobile UI)
+ *
+ * Customization hotspots:
+ * - BRAND: personal display name shown in the menu bar and terminal title.
+ * - projects: add/remove/modify your portfolio entries (title, short, tech, url, image).
+ * - Socials: LINKS passed to SocialBody (inside the Social window) and also passed to Terminal.
+ * - Contact buttons: change the email address and WhatsApp phone/text in the bottom quick actions.
+ * - About: the About window reads props (brand) and also has many defaults inside AboutBody you can override if desired.
+ */
 import { MailIcon, MonitorIcon, ChatIcon, GlobeIcon } from './components/icons/RetroIcons';
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
@@ -8,6 +18,8 @@ import DesktopIcon from './components/DesktopIcon';
 import MenuBar from './components/MenuBar';
 import RetroTerminal from './components/RetroTerminal';
 import SettingsBody from './components/SettingsBody.tsx';
+// Centralized personalization
+import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, CONTACT, ABOUT as ABOUT_CFG } from './config/personalize';
 
 type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings';
 interface RetroWindow { key:WinKey; title:string; x:number; y:number; w:number; h?:number; open:boolean; z:number; minimized?:boolean }
@@ -22,7 +34,8 @@ const loadIcons = ():DesktopIconType[]|null => { try { const raw=localStorage.ge
 const saveIcons = (icons:DesktopIconType[]) => { try { localStorage.setItem('retro-icons', JSON.stringify(icons)); } catch {} };
 
 export default function MobileHome(){
-  const BRAND='JesusFerDev';
+  // PERSONAL: Change the display brand/name of the system and window titles (from config)
+  const BRAND = BRAND_CFG;
   const screenRef = useRef<HTMLDivElement>(null);
   const [maxZ,setMaxZ] = useState(10);
   const [isMobile,setIsMobile] = useState<boolean>(false);
@@ -171,12 +184,34 @@ export default function MobileHome(){
   useEffect(()=> saveIcons(icons),[icons]);
   // Desktop icon marquee/drag logic not needed on dedicated mobile route; omitted
 
-  const projects:Project[]=[
-    { id:'ucm',      title:'Máster UCM', short:'Liderando el Futuro Sostenible', image:`${base}icons/projects.png`,      tech:['WordPress','JavaScript','PHP'] },
-    { id:'coduck',   title:'Coduck',     short:'Plataforma de formación',       image:`${base}icons/projects.png`,   tech:['React','Node','PostgreSQL'] },
-    { id:'madmusic', title:'MadMusic',   short:'Tienda de instrumentos',        image:`${base}icons/projects.png`, tech:['Next.js','Stripe'] }
-  ];
+  /**
+   * PERSONAL: Projects from central config, with base-prefixed images when relative
+   */
+  const projects:Project[] = React.useMemo(()=>{
+    const withBase = (img:string) => {
+      if(/^https?:\/\//.test(img)) return img;
+      if(img.startsWith('/')) return `${base}${img.slice(1)}`;
+      return `${base}${img}`;
+    };
+    return PROJECTS_CFG.map(p=> ({ ...p, image: withBase(p.image) }));
+  },[base]);
   const [selectedProject,setSelectedProject] = useState<Project|null>(projects[0]);
+
+  // PERSONAL: About props from central config (with base-prefixed images when relative)
+  const aboutProps = React.useMemo(()=>{
+    const withBase = (img?:string) => {
+      if(!img) return img;
+      if(/^https?:\/\//.test(img)) return img;
+      if(img.startsWith('/')) return `${base}${img.slice(1)}`;
+      return `${base}${img}`;
+    };
+    return {
+      ...ABOUT_CFG,
+      brand: BRAND,
+      pcImage: withBase(ABOUT_CFG.pcImage),
+      skills: Array.isArray(ABOUT_CFG.skills) ? ABOUT_CFG.skills.map(s=> ({ ...s, src: withBase(s.src) as string })) : ABOUT_CFG.skills
+    } as any;
+  },[base, BRAND]);
 
   const [openMenu,setOpenMenu] = useState<string|null>(null); const closeMenus=()=> setOpenMenu(null);
   const menuItems = {
@@ -195,6 +230,14 @@ export default function MobileHome(){
   const cursorForbidden = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='8' cy='8' r='6' stroke='black' stroke-width='2' fill='white'/><path d='M4 12 L12 4' stroke='black' stroke-width='2'/></svg>`);
   const cursorGrab = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M5 14h6l2-5-1-4-2-1-1 3V5H8v2L7 4 5 5l1 5-2 1z' fill='black'/></svg>`);
   const cursorGrabbing = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='black'/></svg>`);
+  // Light (high-contrast) cursor variants for dark themes
+  const cursorPointerLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M1 1 L12 8 L8 9 L9 13 L7 14 L6 10 L2 12 Z' fill='white' stroke='black' stroke-width='0.8'/></svg>`);
+  const cursorPointerHoverLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M1 1 L12 8 L8 9 L9 13 L7 14 L6 10 L2 12 Z' fill='white' stroke='black' stroke-width='0.8'/><rect x='9' y='9' width='3' height='3' fill='black' stroke='white' stroke-width='0.5'/></svg>`);
+  const cursorTextLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect x='7' y='2' width='2' height='12' fill='white' stroke='black' stroke-width='0.8'/><rect x='4' y='6' width='8' height='2' fill='white' stroke='black' stroke-width='0.8'/></svg>`);
+  const cursorResizeNWSELight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M2 14 L14 2 M5 14H2v-3 M14 5V2h-3' stroke='white' stroke-width='2' /></svg>`);
+  const cursorResizeNESWLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M2 2 L14 14 M11 2h3v3 M2 11v3h3' stroke='white' stroke-width='2' /></svg>`);
+  const cursorGrabLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M5 14h6l2-5-1-4-2-1-1 3V5H8v2L7 4 5 5l1 5-2 1z' fill='white' stroke='black' stroke-width='0.6'/></svg>`);
+  const cursorGrabbingLight = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><path d='M5 13h6l2-4-1-4-2-1-1 2V5H8v2L7 4 5 5l1 4-2 1z' fill='white' stroke='black' stroke-width='0.6'/></svg>`);
 
   const [curvature] = useState<number>(()=> {
     const stored = localStorage.getItem('crt-curvature');
@@ -206,12 +249,18 @@ export default function MobileHome(){
   useEffect(()=> { const handler = (e:KeyboardEvent)=>{ if(e.altKey && (e.key==='c' || e.key==='C')) { setShowCurvDebug((p)=>!p); } }; window.addEventListener('keydown', handler); return ()=> window.removeEventListener('keydown', handler); },[]);
   useEffect(()=> { const handler = (e:KeyboardEvent)=> { if(e.altKey && (e.key==='r' || e.key==='R')) { window.location.reload(); } }; window.addEventListener('keydown', handler); return ()=> window.removeEventListener('keydown', handler); },[]);
   const curvedTransform = React.useMemo(()=> { const perspective = 1500 - curvature*800; const scale = 1 - curvature*0.012; const skewYdeg = curvature * 0.8; return `perspective(${perspective}px) scale(${scale.toFixed(4)}) translateZ(0) skewY(${skewYdeg.toFixed(3)}deg)`; },[curvature]);
+  // Terminal expects socials as Record<string,string>
+  const socialTerminal = React.useMemo(() => {
+    const out: Record<string,string> = {};
+    Object.entries(SOCIAL_LINKS).forEach(([k,v])=>{ if(typeof v === 'string' && v) out[k]=v; });
+    return out;
+  }, []);
   // Barrel generator omitted here (kept simple for mobile route)
 
   return (
   <div className="relative w-full overflow-hidden bg-[#2a2a2a]" style={{ height: '100dvh' }}>
-      <style>{`html,body,#root{font-family:ui-monospace,Menlo,Monaco,'Courier New',monospace}
-button,[role=button],a,.cursor-pointer,.crt-wrapper,.crt-wrapper *,[data-icon]{cursor:url("data:image/svg+xml,${cursorPointer}") 1 1,pointer!important}
+  <style>{`html,body,#root{font-family:ui-monospace,Menlo,Monaco,'Courier New',monospace}
+button,[role=button],a,.cursor-pointer,[data-icon]{cursor:url("data:image/svg+xml,${cursorPointer}") 1 1,pointer!important}
 button:not(:disabled):hover,a:hover,[role=button]:hover,.cursor-pointer:hover,[data-icon]:hover,.clickable-hover:hover,.menu-item:hover{cursor:url("data:image/svg+xml,${cursorPointerHover}") 1 1,pointer!important}
 input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/svg+xml,${cursorText}") 7 7,text!important}
 .cursor-forbidden,button:disabled,a[aria-disabled=true]{cursor:url("data:image/svg+xml,${cursorForbidden}") 7 7,not-allowed!important}
@@ -238,10 +287,13 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
         <div
           ref={screenRef}
           className={`crt-wrapper barrelized absolute inset-0 border border-black/30 ${theme==='phosphor' ? 'theme-phosphor' : theme==='amber' ? 'theme-amber' : 'theme-classic'}`}
-          style={{ ['--screen-bg' as any]: theme==='phosphor'? '#071a07' : theme==='amber'? '#140c00' : '#f2f2f2', ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111' }}
-          
+          style={{
+            ['--screen-bg' as any]: theme==='phosphor'? '#071a07' : theme==='amber'? '#140c00' : '#f2f2f2',
+            ['--screen-fg' as any]: theme==='phosphor'? '#b5ffb5' : theme==='amber'? '#ffd89a' : '#111111',
+            cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default`
+          }}
         >
-          <div className="crt-curved-stage absolute inset-0" style={{ transform: curvedTransform }}>
+          <div className="crt-curved-stage absolute inset-0" style={{ transform: curvedTransform, cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }}>
             <div data-menu-bar className="relative z-50" >
               <MenuBar brand={BRAND} openMenu={openMenu} setOpenMenu={setOpenMenu} closeMenus={closeMenus} menuItems={menuItems as any} menuKeys={menuKeys as any} barHeight={MENU_BAR_HEIGHT} minimal={isMobile} />
             </div>
@@ -288,10 +340,13 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   <div className="mx-auto max-w-[520px] flex items-center justify-around gap-3 px-4 py-2" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
                     {(()=>{ const small = viewport.w <= 480; const btn = small ? 88 : Math.round(mobileIconBox*1.0); const icon = small ? 42 : Math.round(mobileIconBox*0.56); return (
                       <>
-                        <button aria-label="Email" onClick={()=>{ window.location.href = 'mailto:jesusferdev@gmail.com'; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="Email"><MailIcon size={icon} /></button>
+                        {/* PERSONAL: Email address for the quick action button */}
+                        <button aria-label="Email" onClick={()=>{ window.location.href = `mailto:${CONTACT.email}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="Email"><MailIcon size={icon} /></button>
                         <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="About"><MonitorIcon size={icon} /></button>
-                        <button aria-label="WhatsApp" onClick={()=>{ const phone='34600111222'; const text=encodeURIComponent('¡Hola! Vengo desde tu portfolio.'); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="WhatsApp"><ChatIcon size={icon} /></button>
-                        <button aria-label="LinkedIn" onClick={()=>{ window.open('https://www.linkedin.com/in/jesusferdev','_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="LinkedIn"><GlobeIcon size={icon} /></button>
+                        {/* PERSONAL: WhatsApp phone and default message for the quick action button */}
+                        <button aria-label="WhatsApp" onClick={()=>{ const phone=CONTACT.whatsappNumber; const text=encodeURIComponent(CONTACT.whatsappText); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="WhatsApp"><ChatIcon size={icon} /></button>
+                        {/* PERSONAL: Update the external link (LinkedIn or your site) */}
+                        <button aria-label="LinkedIn" onClick={()=>{ window.open(CONTACT.externalLink,'_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="LinkedIn"><GlobeIcon size={icon} /></button>
                       </>
                     ); })()}
                   </div>
@@ -325,24 +380,27 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   onClose={()=> setOpen(w.key,false)}
                   dragProps={isMobile? undefined : (dragMap as any)[w.key]}
                   resizeProps={isMobile? undefined : (resizeMap as any)[w.key]}
-                  contentClassName={w.key==='terminal' ? 'terminal-body' : (w.key==='projects' ? 'projects-body' : undefined)}
+                  contentClassName={w.key==='terminal' ? 'terminal-body overflow-hidden' : (w.key==='projects' ? 'projects-body' : undefined)}
                   growBox={!isMobile}
                 >
-                  {w.key==='about' && <AboutBody brand={BRAND} />}
-                  {w.key==='social' && <SocialBody LINKS={{ github: 'https://github.com/JesusFerDev' }} />}
+                  {/* PERSONAL: About window from central config */}
+                  {w.key==='about' && <AboutBody {...aboutProps} />}
+                  {/* PERSONAL: Socials from central config */}
+                  {w.key==='social' && <SocialBody LINKS={SOCIAL_LINKS} />}
                   {w.key==='projects' && <ProjectsBody list={projects} selected={selectedProject} onSelect={setSelectedProject} />}
-                  {w.key==='terminal' && <RetroTerminal onRequestClose={()=> setOpen('terminal', false)} projects={projects} social={{ github: 'https://github.com/JesusFerDev' }} brand={BRAND} title={`${BRAND} Terminal`} />}
+                  {/* PERSONAL: Terminal also receives socials for shortcuts and the brand for its title */}
+                  {w.key==='terminal' && <RetroTerminal onRequestClose={()=> setOpen('terminal', false)} projects={projects} social={socialTerminal} brand={BRAND} title={`${BRAND} Terminal`} />}
                   {w.key==='settings' && <SettingsBody theme={theme} onThemeChange={setTheme} screensaverMs={600000} onScreensaverMsChange={()=>{}} />}
                 </Window>
               );
             })}
-            <div className="crt-barrel-overlay" />
-            <div className="crt-barrel-specular" />
+            <div className="crt-barrel-overlay" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+            <div className="crt-barrel-specular" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
           </div>
-          <div className="crt-vignette" />
-          <div className="crt-inner-bezel" />
-          <div className="crt-phosphor" />
-          <div className="crt-distort" />
+          <div className="crt-vignette" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+          <div className="crt-inner-bezel" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+          <div className="crt-phosphor" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
+          <div className="crt-distort" style={{ cursor: `url("data:image/svg+xml,${theme==='phosphor'||theme==='amber'? cursorPointerLight : cursorPointer}") 1 1, default` }} />
         </div>
       </div>
       <style>{`
@@ -378,6 +436,35 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
   .theme-phosphor [data-window] .projects-body li:hover,
   .theme-phosphor [data-window] .projects-body button:hover{ background-color: rgba(0,80,0,0.55) !important; color: var(--screen-fg,#b5ffb5) !important; }
 
+    /* High-contrast cursors for dark phosphor theme */
+  .theme-phosphor.crt-wrapper,
+  .theme-phosphor.crt-wrapper *,
+  .theme-phosphor button,
+    .theme-phosphor [role=button],
+    .theme-phosphor a,
+    .theme-phosphor .cursor-pointer,
+  .theme-phosphor.crt-wrapper,
+    .theme-phosphor .crt-wrapper,
+    .theme-phosphor .crt-wrapper *,
+    .theme-phosphor [data-icon]{ cursor:url("data:image/svg+xml,${cursorPointerLight}") 1 1, pointer !important; }
+    .theme-phosphor button:not(:disabled):hover,
+    .theme-phosphor a:hover,
+    .theme-phosphor [role=button]:hover,
+    .theme-phosphor .cursor-pointer:hover,
+  .theme-phosphor.crt-wrapper:hover,
+  .theme-phosphor .crt-wrapper:hover,
+    .theme-phosphor [data-icon]:hover,
+    .theme-phosphor .clickable-hover:hover,
+    .theme-phosphor .menu-item:hover{ cursor:url("data:image/svg+xml,${cursorPointerHoverLight}") 1 1, pointer !important; }
+    .theme-phosphor input[type=text],
+    .theme-phosphor textarea,
+    .theme-phosphor .text-input,
+    .theme-phosphor .selectable-text{ cursor:url("data:image/svg+xml,${cursorTextLight}") 7 7, text !important; }
+    .theme-phosphor .cursor-grab{ cursor:url("data:image/svg+xml,${cursorGrabLight}") 1 1, grab !important; }
+    .theme-phosphor .cursor-grabbing{ cursor:url("data:image/svg+xml,${cursorGrabbingLight}") 1 1, grabbing !important; }
+    .theme-phosphor .cursor-nwse-resize{ cursor:url("data:image/svg+xml,${cursorResizeNWSELight}") 7 7, nwse-resize !important; }
+    .theme-phosphor .cursor-nesw-resize{ cursor:url("data:image/svg+xml,${cursorResizeNESWLight}") 7 7, nesw-resize !important; }
+
         /* Amber readability (mobile) */
         .theme-amber [data-menu-bar] > div{ background-color: rgba(40,24,0,0.72) !important; border-color: rgba(255,200,120,0.28) !important; color: var(--screen-fg,#ffd89a) !important; }
         .theme-amber [data-menu-bar] .border{ border-color: rgba(255,200,120,0.28) !important; }
@@ -403,6 +490,35 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
         .theme-amber [data-window] .projects-body .hover\:bg-black:hover,
         .theme-amber [data-window] .projects-body li:hover,
         .theme-amber [data-window] .projects-body button:hover{ background-color: rgba(90,60,0,0.55) !important; color: var(--screen-fg,#ffd89a) !important; }
+
+      /* High-contrast cursors for dark amber theme */
+    .theme-amber.crt-wrapper,
+    .theme-amber.crt-wrapper *,
+    .theme-amber button,
+          .theme-amber [role=button],
+          .theme-amber a,
+          .theme-amber .cursor-pointer,
+    .theme-amber.crt-wrapper,
+          .theme-amber .crt-wrapper,
+          .theme-amber .crt-wrapper *,
+          .theme-amber [data-icon]{ cursor:url("data:image/svg+xml,${cursorPointerLight}") 1 1, pointer !important; }
+          .theme-amber button:not(:disabled):hover,
+          .theme-amber a:hover,
+          .theme-amber [role=button]:hover,
+          .theme-amber .cursor-pointer:hover,
+    .theme-amber.crt-wrapper:hover,
+    .theme-amber .crt-wrapper:hover,
+          .theme-amber [data-icon]:hover,
+          .theme-amber .clickable-hover:hover,
+          .theme-amber .menu-item:hover{ cursor:url("data:image/svg+xml,${cursorPointerHoverLight}") 1 1, pointer !important; }
+          .theme-amber input[type=text],
+          .theme-amber textarea,
+          .theme-amber .text-input,
+          .theme-amber .selectable-text{ cursor:url("data:image/svg+xml,${cursorTextLight}") 7 7, text !important; }
+          .theme-amber .cursor-grab{ cursor:url("data:image/svg+xml,${cursorGrabLight}") 1 1, grab !important; }
+          .theme-amber .cursor-grabbing{ cursor:url("data:image/svg+xml,${cursorGrabbingLight}") 1 1, grabbing !important; }
+          .theme-amber .cursor-nwse-resize{ cursor:url("data:image/svg+xml,${cursorResizeNWSELight}") 7 7, nwse-resize !important; }
+          .theme-amber .cursor-nesw-resize{ cursor:url("data:image/svg+xml,${cursorResizeNESWLight}") 7 7, nesw-resize !important; }
       `}</style>
       <style>{`
         @media (max-width: 768px), (pointer: coarse) {

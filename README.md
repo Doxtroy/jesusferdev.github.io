@@ -1,73 +1,96 @@
-# React + TypeScript + Vite
+<div align="center">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 🖥️ Retro Mac Portfolio
 
-Currently, two official plugins are available:
+Un portfolio retro con ventanas, terminal y efecto CRT, hecho con React + TypeScript + Vite. Funciona en escritorio y móvil. ✨
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<img src="./monitor.png" alt="Retro preview" width="520" />
 
-## React Compiler
+</div>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Características
 
-## Expanding the ESLint configuration
+- Ventanas arrastrables con barra de título, tamaño y capas (z-index)
+- Modo móvil con iconos grandes y ventanas a pantalla completa
+- Temas: Classic (gris), Green Phosphor 🟢 y Amber 🟠 con tipografía legible
+- Terminal retro integrada (accesos a proyectos y redes)
+- Efecto de pantalla curva (CRT) con capas y superposiciones
+- Bloqueo de pantalla y “screensaver” opcional
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧰 Requisitos
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node 18+ y pnpm (o npm/yarn)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ▶️ Cómo ejecutar
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Build de producción:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm run build
+pnpm run preview
 ```
+
+## 🧑‍🎨 Personalización rápida (datos personales)
+
+Todo lo configurable está centralizado en: `src/config/personalize.ts`.
+
+Ahí puedes cambiar:
+- `BRAND`: tu nombre o marca (aparece en la barra superior y títulos)
+- `PROJECTS`: proyectos con `title`, `short`, `tech`, `url` e `image`
+- `SOCIAL_LINKS`: tus redes (solo las que rellenes se mostrarán)
+- `CONTACT`: email, WhatsApp y enlace externo
+- `ABOUT`: textos del About, etiquetas de memoria, imagen de “PC”, `skills` (iconos)
+
+Notas útiles:
+- Si una imagen es local (por ejemplo `icons/...`), el sistema la “prefija” con el `base` correcto para GitHub Pages, no necesitas preocuparte por rutas absolutas.
+- Si apuntas a una URL externa (`https://...`), se usa tal cual.
+
+También puedes sobreescribir el About directamente en el componente `src/components/AboutBody.tsx`, pero la forma recomendada es usar el objeto `ABOUT` del archivo de configuración anterior.
+
+Más detalles y consejos: lee `CUSTOMIZE.md` 📘
+
+## 🎨 Temas y accesibilidad del cursor
+
+- Temas disponibles: `classic`, `phosphor`, `amber`.
+- El cursor cambia a una versión de alto contraste en temas oscuros para que se vea siempre bien.
+- El tema seleccionado queda guardado en `localStorage`.
+
+## ⌨️ Atajos y extras
+
+- Alt + C: panel de depuración de curvatura CRT
+- Alt + R: reiniciar “sistema” (animación de arranque)
+- Alt + L: bloquear pantalla
+- Desbloqueo: escribe los 4 primeros dígitos de un número muy famoso ➜ `3141`
+
+## 📁 Estructura útil
+
+- `src/RetroMac128KPortfolio.tsx`: vista “escritorio” (modo principal en PC)
+- `src/MobileHome.tsx`: vista optimizada para móvil
+- `src/components/Window.tsx`: ventana genérica (contenedor con scroll automático cuando hace falta)
+- `src/components/RetroTerminal.tsx`: terminal retro
+- `src/components/AboutBody.tsx`: contenido de la ventana About
+- `src/config/personalize.ts`: TU fichero de datos personales 💾
+
+## 🌐 Despliegue (GitHub Pages)
+
+Este proyecto funciona bien en GitHub Pages (tanto en usuario como en “project site”).
+- Detecta automáticamente el `base` a partir de `<base href>` o del primer segmento de la URL.
+- Por eso las imágenes locales se resuelven correctamente incluso bajo `/tu-repo/`.
+
+## 🧪 Estado del proyecto
+
+- Construcción verificada con `pnpm run build` ✅
+- TypeScript sin errores ✅
+
+## 📜 Licencia
+
+Uso personal y educativo. Revisa los assets/recursos que añadas (iconos e imágenes) para respetar sus licencias.
+
+---
+
+¿Sugerencias o mejoras? Abre un issue o propón un PR. ¡Que disfrutes trasteando! 😄
