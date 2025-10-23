@@ -1,0 +1,7 @@
+dist/
+node_modules/
+public/
+.resembles/**
+*.log
+**/*.min.js
+**/*.min.css

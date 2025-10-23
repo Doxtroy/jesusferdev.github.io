@@ -387,7 +387,14 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   {w.key==='about' && <AboutBody {...aboutProps} />}
                   {/* PERSONAL: Socials from central config */}
                   {w.key==='social' && <SocialBody LINKS={SOCIAL_LINKS} />}
-                  {w.key==='projects' && <ProjectsBody list={projects} selected={selectedProject} onSelect={setSelectedProject} />}
+                  {w.key==='projects' && (
+                    <ProjectsBody
+                      list={projects}
+                      selected={selectedProject}
+                      onSelect={setSelectedProject}
+                      folderIcons={{ open: `${base}icons/folder-open.png`, close: `${base}icons/folder-close.png` }}
+                    />
+                  )}
                   {/* PERSONAL: Terminal also receives socials for shortcuts and the brand for its title */}
                   {w.key==='terminal' && <RetroTerminal onRequestClose={()=> setOpen('terminal', false)} projects={projects} social={socialTerminal} brand={BRAND} title={`${BRAND} Terminal`} />}
                   {w.key==='settings' && <SettingsBody theme={theme} onThemeChange={setTheme} screensaverMs={600000} onScreensaverMsChange={()=>{}} />}

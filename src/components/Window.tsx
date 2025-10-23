@@ -3,10 +3,10 @@ import WindowChrome from './WindowChrome';
 
 export interface WindowProps {
 	x: number; y: number; w: number; h?: number | 'auto'; z: number; title: string; open: boolean;
-	children: React.ReactNode; onClose: () => void; dragProps?: React.HTMLAttributes<HTMLDivElement>; resizeProps?: React.HTMLAttributes<HTMLDivElement>; growBox?: boolean; style?: React.CSSProperties; contentClassName?: string; contentStyle?: React.CSSProperties;
+	children: React.ReactNode; onClose: () => void; dragProps?: React.HTMLAttributes<HTMLDivElement>; resizeProps?: React.HTMLAttributes<HTMLDivElement>; growBox?: boolean; style?: React.CSSProperties; contentClassName?: string; contentStyle?: React.CSSProperties; statusText?: string;
 }
 
-const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style, contentClassName, contentStyle }) => {
+const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, children, onClose, dragProps, resizeProps, growBox, style, contentClassName, contentStyle, statusText }) => {
 	if (!open) return null;
 	// When the window has a fixed height, allow internal scrolling so content is never clipped
 	const baseContentClass = h==='auto'? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-auto';
@@ -22,6 +22,12 @@ const Window: React.FC<WindowProps> = ({ x, y, w, h='auto', z, title, open, chil
 					</div>
 				)}
 			</div>
+			{/* Status bar (optional) */}
+			{statusText && (
+				<div className="win-status select-none border-t border-black bg-[#e9e9e9] text-[10px] leading-tight px-2 py-1">
+					{statusText}
+				</div>
+			)}
 		</div>
 	);
 };

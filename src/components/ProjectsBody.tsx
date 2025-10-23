@@ -5,14 +5,31 @@ import { CaretRightIcon, CaretUpIcon, GlobeIcon } from "./icons/RetroIcons";
 export interface Project {
   id: string; title: string; short: string; image: string; tech: string[]; url?: string;
 }
-interface ProjectsBodyProps { list: Project[]; selected: Project | null; onSelect:(p:Project)=>void; }
+interface ProjectsBodyProps {
+  list: Project[];
+  selected: Project | null;
+  onSelect: (p: Project) => void;
+  onOpenDetails?: (p: Project) => void;
+  folderIcons?: { open: string; close: string };
+}
 
-// Iconos genéricos retro (podrías sustituir por assets locales)
-const folderIcon = (open:boolean) => (
-  <div className={`h-6 w-7 border border-black relative bg-[#ffe48a] ${open? 'before:content-[" "] before:absolute before:-top-2 before:left-0 before:h-2 before:w-4 before:bg-[#ffe48a] before:border before:border-black':''}`}></div>
-);
+const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect, onOpenDetails, folderIcons }) => {
+  // Folder icon renderer: prefer provided PNGs; fallback to CSS folder shape
+  const renderFolderIcon = (isOpen: boolean) => {
+    if (folderIcons?.open && folderIcons?.close) {
+      const src = isOpen ? folderIcons.open : folderIcons.close;
+      return (
+        <div className="h-6 w-7 border border-black bg-white flex items-center justify-center">
+          <img src={src} alt="" className="h-5 w-6 object-contain" draggable={false} />
+        </div>
+      );
+    }
+    // Fallback retro CSS folder
+    return (
+      <div className={`h-6 w-7 border border-black relative bg-[#ffe48a] ${isOpen? 'before:content-[" "] before:absolute before:-top-2 before:left-0 before:h-2 before:w-4 before:bg-[#ffe48a] before:border before:border-black':''}`}></div>
+    );
+  };
 
-const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) => {
   const [view,setView] = useState<'list'|'icons'>('list');
   const [selectedIds,setSelectedIds] = useState<string[]>(()=> selected? [selected.id]: []);
   const [lastIndex,setLastIndex] = useState<number>(-1);
@@ -72,7 +89,7 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
     onSelect(p);
   };
 
-  const handleDouble = (p:Project) => { if(p.url) window.open(p.url,'_blank','noopener'); };
+  const handleDouble = (p:Project) => { if(onOpenDetails){ onOpenDetails(p); } else if(p.url) { window.open(p.url,'_blank','noopener'); } };
 
   // Mobile detection for simplified UI inspired by ref2
   const isMobile = typeof window !== 'undefined' && (window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(pointer: coarse)').matches);
@@ -98,10 +115,7 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
                     <div className="flex items-center gap-3">
                       {/* caret icon to the left, like the reference */}
                     <span className="shrink-0">{opened ? <CaretUpIcon size={20} /> : <CaretRightIcon size={20} />}</span>
-                      <span className="inline-flex items-center justify-center w-6 h-6 border border-black bg-[#ffe48a]">
-                        {/* simple folder glyph */}
-                        <span className="block w-4 h-4 bg-black"></span>
-                      </span>
+                      {renderFolderIcon(opened)}
                     <span className="font-semibold text-[17px]">{p.title}</span>
                     </div>
                   </button>
@@ -176,7 +190,7 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
                       onDoubleClick={()=>handleDouble(p)}
                       className={`grid cursor-default grid-cols-[auto_1fr_auto_auto] items-center gap-2 px-2 py-1 select-none ${sel? 'bg-black text-white':''} hover:bg-black/80 hover:text-white` }>
                       <div className="flex items-center gap-2">
-                        {folderIcon(sel)}
+                        {renderFolderIcon(sel)}
                         <span className="font-medium truncate max-w-[120px] sm:max-w-[140px]">{p.title}</span>
                       </div>
                       <span className="truncate text-[9px] sm:text-[11px]">{p.short}</span>
@@ -197,7 +211,7 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
                       onDoubleClick={()=>handleDouble(p)}
                       className={`flex flex-col items-center gap-1 text-[9px] sm:text-[10px] focus:outline-none ${sel? 'opacity-100':'opacity-90 hover:opacity-100'}`}>
                       <div className={`relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center border border-black bg-white ${sel? 'outline outline-2 outline-black':''}`}>
-                        {folderIcon(sel)}
+                        {renderFolderIcon(sel)}
                       </div>
                       <span className="w-full truncate font-medium">{p.title}</span>
                     </button>
@@ -208,8 +222,8 @@ const ProjectsBody:React.FC<ProjectsBodyProps> = ({ list, selected, onSelect }) 
           </div>
         </div>
 
-        {/* Preview pane */}
-        <div className="hidden lg:flex w-[300px] shrink-0 flex-col bg-[#fafafa]">
+  {/* Preview pane (restored). Show from md and up to keep desktop feel. */}
+  <div className="hidden md:flex w-[300px] shrink-0 flex-col bg-[#fafafa]">
           <div className="border-b border-black bg-[#ececec] px-2 py-1 font-semibold flex items-center justify-between">
             <span>Preview</span>
             {active.url && <a href={active.url} target="_blank" rel="noreferrer" className="text-[10px] underline">Abrir</a>}

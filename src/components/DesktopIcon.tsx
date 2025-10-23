@@ -21,6 +21,7 @@ const DesktopIcon: React.FC<DesktopIconProps> = ({ label, x, y, img, isSelected,
 	return (
 		<div
 			data-icon
+			data-icon-id={label ? `${label}` : undefined}
 			style={{ left: x, top: y, position: 'absolute', width: box, height: boxH }}
 			onDoubleClick={onDoubleClick}
 			onPointerDown={onPointerDown}

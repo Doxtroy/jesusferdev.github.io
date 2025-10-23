@@ -13,6 +13,7 @@ import { MailIcon, MonitorIcon, ChatIcon, GlobeIcon } from './components/icons/R
 import AboutBody from './components/AboutBody';
 import SocialBody from './components/SocialBody';
 import ProjectsBody, { type Project } from './components/ProjectsBody';
+import ProjectDetails from './components/ProjectDetails';
 import Window from './components/Window';
 import DesktopIcon from './components/DesktopIcon';
 import MenuBar from './components/MenuBar';
@@ -22,7 +23,7 @@ import SettingsBody from './components/SettingsBody.tsx';
 import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, ABOUT as ABOUT_CFG } from './config/personalize';
 
 // Types
-type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings';
+type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings' | 'details';
 interface RetroWindow { key:WinKey; title:string; x:number; y:number; w:number; h?:number; open:boolean; z:number; minimized?:boolean }
 interface DesktopIconType { id:string; label:string; x:number; y:number; openKey?:WinKey; img?:{src:string;w?:number;h?:number} }
 
@@ -35,6 +36,7 @@ interface WindowBodyProps {
   selectedProject: Project | null;
   onSelectProject: (p: Project | null) => void;
   onCloseKey: (key: WinKey) => void;
+  bringToFrontKey: (key: WinKey) => void;
   theme: Theme;
   onThemeChange: (t: Theme) => void;
   screensaverMs: number;
@@ -42,7 +44,7 @@ interface WindowBodyProps {
   base: string;
 }
 
-const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange, base }) => {
+const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, bringToFrontKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange, base }) => {
   switch (win.key) {
     case 'about':
       {
@@ -65,7 +67,17 @@ const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedP
     case 'social':
       return <SocialBody LINKS={SOCIAL_LINKS} />;
     case 'projects':
-      return <ProjectsBody list={projects} selected={selectedProject} onSelect={onSelectProject} />;
+      return (
+        <ProjectsBody
+          list={projects}
+          selected={selectedProject}
+          onSelect={onSelectProject}
+          onOpenDetails={(p)=> { onSelectProject(p); bringToFrontKey('details'); }}
+          folderIcons={{ open: `${base}icons/folder-open.png`, close: `${base}icons/folder-close.png` }}
+        />
+      );
+    case 'details':
+      return <ProjectDetails project={selectedProject} />;
     case 'terminal':
       return (
         <RetroTerminal
@@ -133,7 +145,8 @@ export default function RetroMac128KPortfolio(){
     projects:{x:340,y:MENU_BAR_HEIGHT+80,w:860,h:520},
     social:{x:420,y:MENU_BAR_HEIGHT+120,w:640,h:360},
     terminal:{x:300,y:MENU_BAR_HEIGHT+160,w:640,h:460},
-    settings:{x:200,y:MENU_BAR_HEIGHT+120,w:460,h:280}
+    settings:{x:200,y:MENU_BAR_HEIGHT+120,w:460,h:280},
+    details:{x:360,y:MENU_BAR_HEIGHT+120,w:640,h:420}
   };
   // Windows init
   const initialWins:RetroWindow[] = useMemo(()=>{
@@ -143,7 +156,8 @@ export default function RetroMac128KPortfolio(){
   { key:'projects', title:'Projects',  ...defaultWinDefs.projects, open:false, z:9  },
   { key:'social', title:'Social Life', ...defaultWinDefs.social,   open:false, z:8  },
   { key:'terminal', title:'Terminal',   ...defaultWinDefs.terminal, open:false, z:7  },
-  { key:'settings', title:'Settings', ...defaultWinDefs.settings, open:false, z:6 }
+  { key:'settings', title:'Settings', ...defaultWinDefs.settings, open:false, z:6 },
+  { key:'details', title:'Project Details', ...defaultWinDefs.details, open:false, z:5 }
     ];
     return base.map(w=>({ ...w, ...(stored[w.key]||{}) }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,24 +247,28 @@ export default function RetroMac128KPortfolio(){
   const dragSocial = useDragWin('social');
   const dragTerminal = useDragWin('terminal');
   const dragSettings = useDragWin('settings');
+  const dragDetails = useDragWin('details');
   const resizeAbout = useResizeWin('about');
   const resizeProjects = useResizeWin('projects');
   const resizeSocial = useResizeWin('social');
   const resizeTerminal = useResizeWin('terminal');
   const resizeSettings = useResizeWin('settings');
+  const resizeDetails = useResizeWin('details');
   const dragMap: Record<WinKey, { onPointerDown:(e:React.PointerEvent)=>void; onPointerMove:(e:React.PointerEvent)=>void; onPointerUp:(e:React.PointerEvent)=>void }> = {
     about: dragAbout,
     projects: dragProjects,
     social: dragSocial,
     terminal: dragTerminal,
-    settings: dragSettings
+    settings: dragSettings,
+    details: dragDetails
   };
   const resizeMap: typeof dragMap = {
     about: resizeAbout,
     projects: resizeProjects,
     social: resizeSocial,
     terminal: resizeTerminal,
-    settings: resizeSettings
+    settings: resizeSettings,
+    details: resizeDetails
   };
 
   // Desktop icons
@@ -342,6 +360,7 @@ export default function RetroMac128KPortfolio(){
     return PROJECTS_CFG.map(p=> ({ ...p, image: withBase(p.image) }));
   },[base]);
   const [selectedProject,setSelectedProject] = useState<Project|null>(projects[0]);
+  // Note: Details window is opened via ProjectsBody onOpenDetails -> bringToFront('details')
 
   // ====== Restart (Reboot) logic ======
   const restartSystem = () => {
@@ -883,6 +902,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   dragProps={isMobile? undefined : dragMap[w.key]}
                   resizeProps={isMobile? undefined : resizeMap[w.key]}
                   contentClassName={w.key==='terminal' ? 'terminal-body overflow-hidden' : (w.key==='projects' ? 'projects-body' : undefined)}
+                  statusText={w.key==='projects' ? 'Doble clic → Detalles  •  Shift = rango  •  Ctrl = multi' : undefined}
                   growBox={!isMobile}
                 >
                   {/* PERSONAL: About/Socials/Terminal customization happens through props here */}
@@ -894,6 +914,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                     selectedProject={selectedProject}
                     onSelectProject={setSelectedProject}
                     onCloseKey={(key)=> setOpen(key,false)}
+                    bringToFrontKey={bringToFront}
                     theme={theme}
                     onThemeChange={setTheme}
                     screensaverMs={screensaverMs}
