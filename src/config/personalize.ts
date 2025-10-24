@@ -11,7 +11,6 @@ export const PROJECTS: Project[] = [
   { id: "ucm",      title: "Máster UCM", short: "Liderando el Futuro Sostenible", image: "icons/projects.png", tech: ["WordPress", "JavaScript", "PHP"] },
   { id: "coduck",   title: "Coduck",     short: "Plataforma de formación",       image: "icons/projects.png", tech: ["React", "Node", "PostgreSQL"] },
   { id: "madmusic", title: "MadMusic",   short: "Tienda de instrumentos",        image: "icons/projects.png", tech: ["Next.js", "Stripe"] },
-  { id: "coduck",   title: "Coduck",     short: "Plataforma de formación",       image: "icons/projects.png", tech: ["React", "Node", "PostgreSQL"] },
   { id: "retro",    title: "Retro",      short: "Aplicación retro",             image: "icons/projects.png", tech: ["JavaScript", "CSS"] }
 ];
 
@@ -20,7 +19,7 @@ export const SOCIAL_LINKS: SocialLinks = {
   github: "https://github.com/JesusFerDev",
   linkedin: "https://www.linkedin.com/in/jesusferdev/",
   // instagram: "https://instagram.com/youruser",
-  // whatsapp: "https://wa.me/34600111222?text=Hola%20desde%20tu%20portfolio",
+  whatsapp: "Escribeme por WhatsApp! +34634596105",
   // spotify: "https://open.spotify.com/user/...",
   // email: "mailto:you@example.com",
 };
@@ -44,15 +43,40 @@ export const ABOUT = {
   creativity: "165 ZB de genialidad",
   memoryLabelLeft: "Memoria",
   memoryLabelRight: "0,06MB libres de 965 ZB",
-  cvUrl: "https://rafaheras.dev/wp-content/uploads/2024/07/Rafa-de-las-Heras-CV.pdf",
-  pcImage: "https://rafaheras.dev/wp-content/uploads/2024/06/pc.png",
+  cvUrl: "cv/CV_JesusFer_2025.pdf",
+  pcImage: "logos/pc.png",
   skills: [
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/JavaScript-logo.png', alt:'JavaScript' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/Php-logo.png', alt:'PHP' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/fc9b4d4d43c92322dff53c160295320f.png', alt:'React' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/elementor-icon.webp', alt:'Elementor' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/figma-icon-1024x1024-mvfh9xsk.png', alt:'Figma' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/Photoshop_CC_icon.png', alt:'Photoshop' },
-    { src:'https://rafaheras.dev/wp-content/uploads/2024/06/492px-Illustrator_CC_icon.png', alt:'Illustrator' }
+    { src:'logos/JavaScript-logo.png', alt:'JavaScript' },
+    { src:'logos/Php-logo.png', alt:'PHP' },
+    { src:'logos/fc9b4d4d43c92322dff53c160295320f.png', alt:'React' },
+    { src:'logos/elementor-icon.webp', alt:'Elementor' },
+    { src:'logos/figma-icon-1024x1024-mvfh9xsk.png', alt:'Figma' },
+    { src:'logos/Photoshop_CC_icon.png', alt:'Photoshop' },
+    { src:'logos/492px-Illustrator_CC_icon.png', alt:'Illustrator' }
   ]
 } as const;
+
+// Centralized icons and image asset paths (relative to project base unless absolute URL)
+// Use simple relative paths like "icons/xyz.png"; routes will prefix them with the computed base.
+export const ICONS = {
+  desktop: {
+    projects: "icons/projects.png",
+    social: "icons/folder-heart.png",
+    about: "icons/about.png",
+    terminal: "icons/terminal.png",
+    settings: "icons/settings.png" // optional
+  },
+  folders: {
+    open: "icons/folder-open.png",
+    close: "icons/folder-close.png"
+  },
+  quick: { about: "icons/about.png",
+        whatsapp: "icons/wapp.png",
+        external: "icons/linkedin.png",
+        email: "icons/email.png"
+   }
+} satisfies {
+  desktop: { projects: string; social: string; about: string; terminal: string; settings?: string };
+  folders: { open: string; close: string };
+  quick: { email?: string; about?: string; whatsapp?: string; external?: string };
+};

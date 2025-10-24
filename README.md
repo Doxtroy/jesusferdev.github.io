@@ -45,6 +45,10 @@ Ahí puedes cambiar:
 - `SOCIAL_LINKS`: tus redes (solo las que rellenes se mostrarán)
 - `CONTACT`: email, WhatsApp y enlace externo
 - `ABOUT`: textos del About, etiquetas de memoria, imagen de “PC”, `skills` (iconos)
+ - `ICONS`: rutas de iconos centralizadas
+	 - `desktop`: Projects/Social/About/Terminal y opcional `settings`
+	 - `folders`: iconos PNG de carpeta `open`/`close` usados en Projects (desktop y móvil)
+	 - `quick` (opcional): iconos para los botones rápidos del pie en móvil (`email`, `about`, `whatsapp`, `external`)
 
 Notas útiles:
 - Si una imagen es local (por ejemplo `icons/...`), el sistema la “prefija” con el `base` correcto para GitHub Pages, no necesitas preocuparte por rutas absolutas.

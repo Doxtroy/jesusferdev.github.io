@@ -152,9 +152,9 @@ const AboutBody: React.FC<AboutBodyProps> = ({
 
 			{/* Footer */}
 			<div className="mt-5 sm:mt-6 text-center opacity-80 text-[13px] sm:text-[15px]">
-				{brand} Corporation © 1991-2085? All Lefts Reserved.
+				{brand} Corporation © 1998-???? All Lefts Reserved.
 				<br />
-				Designed en Toledo, ensamblado en la parte de atrás de un coche.
+				Designed en Murcia.
 			</div>
 		</div>
 	);

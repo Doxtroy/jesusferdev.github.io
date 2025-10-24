@@ -20,7 +20,7 @@ import MenuBar from './components/MenuBar';
 import RetroTerminal from './components/RetroTerminal';
 import SettingsBody from './components/SettingsBody.tsx';
 // Centralized personalization
-import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, ABOUT as ABOUT_CFG } from './config/personalize';
+import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, ABOUT as ABOUT_CFG, ICONS as ICONS_CFG } from './config/personalize';
 
 // Types
 type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings' | 'details';
@@ -45,21 +45,21 @@ interface WindowBodyProps {
 }
 
 const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedProject, onSelectProject, onCloseKey, bringToFrontKey, theme, onThemeChange, screensaverMs, onScreensaverMsChange, base }) => {
+  const addBase = (img?: string) => {
+    if (!img) return img;
+    if (/^https?:\/\//.test(img)) return img;
+    if (img.startsWith('/')) return `${base}${img.slice(1)}`;
+    return `${base}${img}`;
+  };
   switch (win.key) {
     case 'about':
       {
-        const withBase = (img?: string) => {
-          if (!img) return img;
-          if (/^https?:\/\//.test(img)) return img;
-          if (img.startsWith('/')) return `${base}${img.slice(1)}`;
-          return `${base}${img}`;
-        };
         const aboutProps = {
           ...ABOUT_CFG,
           brand,
-          pcImage: withBase(ABOUT_CFG.pcImage),
+          pcImage: addBase(ABOUT_CFG.pcImage),
           skills: Array.isArray(ABOUT_CFG.skills)
-            ? ABOUT_CFG.skills.map(s => ({ ...s, src: withBase(s.src) as string }))
+            ? ABOUT_CFG.skills.map(s => ({ ...s, src: addBase(s.src) as string }))
             : ABOUT_CFG.skills
         } as any;
         return <AboutBody {...aboutProps} />;
@@ -72,8 +72,8 @@ const WindowBody: React.FC<WindowBodyProps> = ({ win, brand, projects, selectedP
           list={projects}
           selected={selectedProject}
           onSelect={onSelectProject}
-          onOpenDetails={(p)=> { onSelectProject(p); bringToFrontKey('details'); }}
-          folderIcons={{ open: `${base}icons/folder-open.png`, close: `${base}icons/folder-close.png` }}
+          onOpenDetails={(p) => { onSelectProject(p); bringToFrontKey('details'); }}
+          folderIcons={{ open: addBase(ICONS_CFG.folders.open) as string, close: addBase(ICONS_CFG.folders.close) as string }}
         />
       );
     case 'details':
@@ -271,12 +271,13 @@ export default function RetroMac128KPortfolio(){
     details: resizeDetails
   };
 
-  // Desktop icons
+  // Desktop icons (centralized through config + base prefix)
+  const withBasePath = (p:string)=> (/^https?:\/\//.test(p)? p : (p.startsWith('/')? `${base}${p.slice(1)}` : `${base}${p}`));
   const defaultIcons:DesktopIconType[]=[
-    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src:`${base}icons/projects.png`} },
-    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src:`${base}icons/folder-heart.png`} },
-    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src:`${base}icons/about.png`} },
-    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src:`${base}icons/projects.png`} }
+    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src: withBasePath(ICONS_CFG.desktop.projects)} },
+    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src: withBasePath(ICONS_CFG.desktop.social)} },
+    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src: withBasePath(ICONS_CFG.desktop.about)} },
+    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src: withBasePath(ICONS_CFG.desktop.terminal)} }
   ];
   const [icons,setIcons] = useState<DesktopIconType[]>(()=> loadIcons() ?? defaultIcons);
   // Migrate old persisted icon src (e.g., '/icons/x.png') to base-prefixed paths once
@@ -873,8 +874,8 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                   <div className="pointer-events-none absolute inset-0">
                     {trail.map(td=> {
                       const age = Date.now()-td.created; const life = TRAIL_LIFE; const t = Math.min(1, age / life); const opacity = 1 - t; if(opacity<=0) return null; const containerW=92; const square=64; const offsetX=(containerW-square)/2; const left=td.x+offsetX; const top=td.y; const scale=1+0.05*(1-t); return (
-                        <div key={td.created+td.id+Math.random()} style={{ position:'absolute', left, top, width:square, height:square, opacity, transform:`scale(${scale})`, filter:'grayscale(1)', pointerEvents:'none', transition:'opacity 90ms linear' }}>
-                          <div className="w-full h-full bg-white ring-1 ring-black flex items-center justify-center">
+                        <div key={td.created+td.id+Math.random()} style={{ position:'absolute', left, top, width:square, height:square, opacity, transform:`scale(${scale})`, pointerEvents:'none', transition:'opacity 90ms linear' }}>
+                          <div data-icon-trail className="w-full h-full bg-white ring-1 ring-black flex items-center justify-center">
                             {td.src ? <img src={td.src} className="w-12 h-12 object-contain" draggable={false} /> : <div className="w-12 h-12 bg-black" />}
                           </div>
                         </div>
@@ -947,6 +948,32 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
           `}</style>
           {/* Theme style overrides for green-phosphor: emphasize readability */}
           <style>{`
+            /* Global theme image filter variables */
+            .theme-classic{ --theme-image-filter: grayscale(1) contrast(1.06); }
+            .theme-phosphor{ --theme-image-filter: grayscale(1) brightness(0.92) sepia(1) hue-rotate(90deg) saturate(2.1) contrast(1.08); }
+            .theme-amber{ --theme-image-filter: grayscale(1) brightness(0.94) sepia(1) hue-rotate(-20deg) saturate(2.2) contrast(1.08); }
+
+            /* Apply filters to raster images inside icons and window content */
+            .theme-classic [data-icon] img,
+            .theme-classic [data-icon-trail] img,
+            .theme-classic [data-window] .win-content img{ filter: var(--theme-image-filter); }
+            .theme-phosphor [data-icon] img,
+            .theme-phosphor [data-icon-trail] img,
+            .theme-phosphor [data-window] .win-content img{ filter: var(--theme-image-filter); }
+            .theme-amber [data-icon] img,
+            .theme-amber [data-icon-trail] img,
+            .theme-amber [data-window] .win-content img{ filter: var(--theme-image-filter); }
+
+            /* Also tint the trail tile background to avoid white glare */
+            .theme-phosphor [data-icon-trail]{ background-color: rgba(0,24,0,0.5) !important; }
+            .theme-amber [data-icon-trail]{ background-color: rgba(26,18,0,0.5) !important; }
+
+            /* Global content whites -> themed gray for readability */
+            .theme-phosphor [data-window] .win-content .bg-white,
+            .theme-phosphor [data-window] .win-content [class*="bg-[#"]{ background-color: rgba(0,24,0,0.5) !important; }
+            .theme-amber [data-window] .win-content .bg-white,
+            .theme-amber [data-window] .win-content [class*="bg-[#"]{ background-color: rgba(26,18,0,0.5) !important; }
+
             .theme-phosphor{ --crt-scanline-color: rgba(0,255,150,0.05); --crt-mask-color: rgba(0,255,140,0.03); }
             .theme-phosphor{ -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
             .theme-phosphor * { text-shadow: 0 0 0.6px rgba(160,255,160,0.28); }

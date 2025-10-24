@@ -19,7 +19,7 @@ import MenuBar from './components/MenuBar';
 import RetroTerminal from './components/RetroTerminal';
 import SettingsBody from './components/SettingsBody.tsx';
 // Centralized personalization
-import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, CONTACT, ABOUT as ABOUT_CFG } from './config/personalize';
+import { BRAND as BRAND_CFG, PROJECTS as PROJECTS_CFG, SOCIAL_LINKS, CONTACT, ABOUT as ABOUT_CFG, ICONS as ICONS_CFG } from './config/personalize';
 
 type WinKey = 'about' | 'projects' | 'social' | 'terminal' | 'settings';
 interface RetroWindow { key:WinKey; title:string; x:number; y:number; w:number; h?:number; open:boolean; z:number; minimized?:boolean }
@@ -163,11 +163,12 @@ export default function MobileHome(){
   const dragMap = { about: dragAbout, projects: dragProjects, social: dragSocial, terminal: dragTerminal, settings: dragSettings } as const;
   const resizeMap = { about: resizeAbout, projects: resizeProjects, social: resizeSocial, terminal: resizeTerminal, settings: resizeSettings } as const;
 
+  const withBasePath = (p:string)=> (/^https?:\/\//.test(p)? p : (p.startsWith('/')? `${base}${p.slice(1)}` : `${base}${p}`));
   const defaultIcons:DesktopIconType[]=[
-    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src:`${base}icons/projects.png`} },
-    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src:`${base}icons/folder-heart.png`} },
-    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src:`${base}icons/about.png`} },
-    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src:`${base}icons/projects.png`} }
+    { id:'proj',   label:'Projects',  x:24,y:MENU_BAR_HEIGHT+42,  openKey:'projects', img:{src: withBasePath(ICONS_CFG.desktop.projects)} },
+    { id:'social', label:'Social',    x:24,y:MENU_BAR_HEIGHT+190, openKey:'social',   img:{src: withBasePath(ICONS_CFG.desktop.social)} },
+    { id:'about',  label:'About Me',  x:24,y:MENU_BAR_HEIGHT+338, openKey:'about',    img:{src: withBasePath(ICONS_CFG.desktop.about)} },
+    { id:'terminal', label:'Terminal', x:24,y:MENU_BAR_HEIGHT+486, openKey:'terminal', img:{src: withBasePath(ICONS_CFG.desktop.terminal)} }
   ];
   const [icons,setIcons] = useState<DesktopIconType[]>(()=> loadIcons() ?? defaultIcons);
   useEffect(()=>{
@@ -306,7 +307,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                       label={'Projects'}
                       x={16}
                       y={8}
-                      img={{ src: `${base}icons/projects.png` }}
+                      img={{ src: withBasePath(ICONS_CFG.desktop.projects) }}
                       isSelected={false}
                       onDoubleClick={()=> bringToFront('projects')}
                       onPointerDown={()=> bringToFront('projects')}
@@ -317,7 +318,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                       label={'Terminal'}
                       x={(viewport.w<=390? 16 : 16 + Math.round(mobileIconBox + 20))}
                       y={(viewport.w<=390? 8 + Math.round(mobileIconBox*1.04) : 8)}
-                      img={{ src: `${base}icons/projects.png` }}
+                      img={{ src: withBasePath(ICONS_CFG.desktop.terminal) }}
                       isSelected={false}
                       onDoubleClick={()=> bringToFront('terminal')}
                       onPointerDown={()=> bringToFront('terminal')}
@@ -328,7 +329,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                       label={'Settings'}
                       x={(viewport.w<=390? 16 : 16)}
                       y={(viewport.w<=390? 8 + Math.round(mobileIconBox*2.08) : 8 + Math.round(mobileIconBox*1.04))}
-                      img={{ src: `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><path fill='black' d='M10.325 4.317a1 1 0 0 1 .99-.142l.83.332a1 1 0 0 0 .71 0l.83-.332a1 1 0 0 1 1.314.57l.342.86a1 1 0 0 0 .54.553l.86.342a1 1 0 0 1 .57 1.314l-.332.83a1 1 0 0 0 0 .71l.332.83a1 1 0 0 1-.57 1.314l-.86.342a1 1 0 0 0-.54.553l-.342.86a1 1 0 0 1-1.314.57l-.83-.332a1 1 0 0 0-.71 0l-.83.332a1 1 0 0 1-1.314-.57l-.342-.86a1 1 0 0 0-.54-.553l-.86-.342a1 1 0 0 1-.57-1.314l.332-.83a1 1 0 0 0 0-.71l-.332-.83a1 1 0 0 1 .57-1.314l.86-.342a1 1 0 0 0 .54-.553l.342-.86ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'/></svg>`)}` }}
+                      img={{ src: (ICONS_CFG.desktop as any).settings ? withBasePath((ICONS_CFG.desktop as any).settings as string) : `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><path fill='black' d='M10.325 4.317a1 1 0 0 1 .99-.142l.83.332a1 1 0 0 0 .71 0l.83-.332a1 1 0 0 1 1.314.57l.342.86a1 1 0 0 0 .54.553l.86.342a1 1 0 0 1 .57 1.314l-.332.83a1 1 0 0 0 0 .71l.332.83a1 1 0 0 1-.57 1.314l-.86.342a1 1 0 0 0-.54.553l-.342.86a1 1 0 0 1-1.314.57l-.83-.332a1 1 0 0 0-.71 0l-.83.332a1 1 0 0 1-1.314-.57l-.342-.86a1 1 0 0 0-.54-.553l-.86-.342a1 1 0 0 1-.57-1.314l.332-.83a1 1 0 0 0 0-.71l-.332-.83a1 1 0 0 1 .57-1.314l.86-.342a1 1 0 0 0 .54-.553l.342-.86ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'/></svg>`)}` }}
                       isSelected={false}
                       onDoubleClick={()=> bringToFront('settings')}
                       onPointerDown={()=> bringToFront('settings')}
@@ -338,15 +339,15 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                 </div>
                 <div className="absolute inset-x-0" style={{ bottom: 'max(6px, env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto max-w-[520px] flex items-center justify-around gap-3 px-4 py-2" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-                    {(()=>{ const small = viewport.w <= 480; const btn = small ? 88 : Math.round(mobileIconBox*1.0); const icon = small ? 42 : Math.round(mobileIconBox*0.56); return (
+                    {(()=>{ const small = viewport.w <= 480; const btn = small ? 88 : Math.round(mobileIconBox*1.0); const icon = small ? 42 : Math.round(mobileIconBox*0.56); const quick = ICONS_CFG.quick || {}; return (
                       <>
                         {/* PERSONAL: Email address for the quick action button */}
-                        <button aria-label="Email" onClick={()=>{ window.location.href = `mailto:${CONTACT.email}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="Email"><MailIcon size={icon} /></button>
-                        <button aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="About"><MonitorIcon size={icon} /></button>
+                        <button data-icon aria-label="Email" onClick={()=>{ window.location.href = `mailto:${CONTACT.email}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="Email">{ (quick as any).email ? <img alt="Email" src={withBasePath((quick as any).email)} style={{ width: icon, height: icon }} /> : <MailIcon size={icon} /> }</button>
+                        <button data-icon aria-label="About" onClick={()=> bringToFront('about')} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="About">{ (quick as any).about ? <img alt="About" src={withBasePath((quick as any).about)} style={{ width: icon, height: icon }} /> : <MonitorIcon size={icon} /> }</button>
                         {/* PERSONAL: WhatsApp phone and default message for the quick action button */}
-                        <button aria-label="WhatsApp" onClick={()=>{ const phone=CONTACT.whatsappNumber; const text=encodeURIComponent(CONTACT.whatsappText); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="WhatsApp"><ChatIcon size={icon} /></button>
+                        <button data-icon aria-label="WhatsApp" onClick={()=>{ const phone=CONTACT.whatsappNumber; const text=encodeURIComponent(CONTACT.whatsappText); window.location.href = `https://wa.me/${phone}?text=${text}`; }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="WhatsApp">{ (quick as any).whatsapp ? <img alt="WhatsApp" src={withBasePath((quick as any).whatsapp)} style={{ width: icon, height: icon }} /> : <ChatIcon size={icon} /> }</button>
                         {/* PERSONAL: Update the external link (LinkedIn or your site) */}
-                        <button aria-label="LinkedIn" onClick={()=>{ window.open(CONTACT.externalLink,'_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="LinkedIn"><GlobeIcon size={icon} /></button>
+                        <button data-icon aria-label="LinkedIn" onClick={()=>{ window.open(CONTACT.externalLink,'_blank','noopener'); }} className="grid place-items-center rounded bg-white hover:bg-black hover:text-white border border-black" style={{ width: btn, height: btn }} title="LinkedIn">{ (quick as any).external ? <img alt="External" src={withBasePath((quick as any).external)} style={{ width: icon, height: icon }} /> : <GlobeIcon size={icon} /> }</button>
                       </>
                     ); })()}
                   </div>
@@ -392,7 +393,7 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
                       list={projects}
                       selected={selectedProject}
                       onSelect={setSelectedProject}
-                      folderIcons={{ open: `${base}icons/folder-open.png`, close: `${base}icons/folder-close.png` }}
+                      folderIcons={{ open: withBasePath(ICONS_CFG.folders.open), close: withBasePath(ICONS_CFG.folders.close) }}
                     />
                   )}
                   {/* PERSONAL: Terminal also receives socials for shortcuts and the brand for its title */}
@@ -411,7 +412,39 @@ input[type=text],textarea,.text-input,.selectable-text{cursor:url("data:image/sv
         </div>
       </div>
       <style>{`
-        /* Base theme variables */
+        /* Theme image filter variables */
+        .theme-classic{ --theme-image-filter: grayscale(1) contrast(1.06); }
+        .theme-phosphor{ --theme-image-filter: grayscale(1) brightness(0.92) sepia(1) hue-rotate(90deg) saturate(2.1) contrast(1.08); }
+        .theme-amber{ --theme-image-filter: grayscale(1) brightness(0.94) sepia(1) hue-rotate(-20deg) saturate(2.2) contrast(1.08); }
+
+        /* Apply to images in icons and window content (mobile) */
+        .theme-classic [data-icon] img,
+        .theme-classic [data-window] .win-content img{ filter: var(--theme-image-filter); }
+        .theme-phosphor [data-icon] img,
+        .theme-phosphor [data-window] .win-content img{ filter: var(--theme-image-filter); }
+        .theme-amber [data-icon] img,
+        .theme-amber [data-window] .win-content img{ filter: var(--theme-image-filter); }
+
+  /* Global theme image filter variables */
+  .theme-classic{ --theme-image-filter: grayscale(1) contrast(1.06); }
+  .theme-phosphor{ --theme-image-filter: grayscale(1) brightness(0.92) sepia(1) hue-rotate(90deg) saturate(2.1) contrast(1.08); }
+  .theme-amber{ --theme-image-filter: grayscale(1) brightness(0.94) sepia(1) hue-rotate(-20deg) saturate(2.2) contrast(1.08); }
+
+  /* Apply filters to raster images inside icons and window content */
+  .theme-classic [data-icon] img,
+  .theme-classic [data-window] .win-content img{ filter: var(--theme-image-filter); }
+  .theme-phosphor [data-icon] img,
+  .theme-phosphor [data-window] .win-content img{ filter: var(--theme-image-filter); }
+  .theme-amber [data-icon] img,
+  .theme-amber [data-window] .win-content img{ filter: var(--theme-image-filter); }
+
+  /* Global content whites -> themed gray for readability */
+  .theme-phosphor [data-window] .win-content .bg-white,
+  .theme-phosphor [data-window] .win-content [class*="bg-[#"]{ background-color: rgba(0,24,0,0.5) !important; }
+  .theme-amber [data-window] .win-content .bg-white,
+  .theme-amber [data-window] .win-content [class*="bg-[#"]{ background-color: rgba(26,18,0,0.5) !important; }
+
+  /* Base theme variables */
         .theme-phosphor{ --crt-scanline-color: rgba(0,255,150,0.05); --crt-mask-color: rgba(0,255,140,0.03); }
         .theme-phosphor * { text-shadow: 0 0 0.6px rgba(160,255,160,0.28); }
         .theme-amber{ --crt-scanline-color: rgba(255,170,60,0.05); --crt-mask-color: rgba(255,200,120,0.03); }
