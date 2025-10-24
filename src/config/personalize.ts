@@ -17,7 +17,7 @@ export const PROJECTS: Project[] = [
 // Social links: only provided keys are rendered in Socials and used by Terminal (if passed)
 export const SOCIAL_LINKS: SocialLinks = {
   github: "https://github.com/JesusFerDev",
-  linkedin: "https://www.linkedin.com/in/jesusferdev/",
+  linkedin: "https://www.linkedin.com/in/jes%C3%BAs-fernandez-franco-15505a1b2/",
   // instagram: "https://instagram.com/youruser",
   whatsapp: "Escribeme por WhatsApp! +34634596105",
   // spotify: "https://open.spotify.com/user/...",
@@ -29,7 +29,7 @@ export const CONTACT = {
   email: "jesusferdev@gmail.com",
   whatsappNumber: "34634596105",
   whatsappText: "¡Hola! Vengo desde tu portfolio.",
-  externalLink: "https://www.linkedin.com/in/jesusferdev",
+  externalLink: "https://www.linkedin.com/in/jes%C3%BAs-fernandez-franco-15505a1b2/",
 };
 
 // About: texts and images for the About window
@@ -64,7 +64,7 @@ export const ICONS = {
     social: "icons/folder-heart.png",
     about: "icons/about.png",
     terminal: "icons/terminal.png",
-    settings: "icons/settings.png" // optional
+    settings: "icons/settings.png" 
   },
   folders: {
     open: "icons/folder-open.png",
